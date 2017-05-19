@@ -1,0 +1,885 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Go,Data Structure," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="最近在复习数据结构，打算用Go语言实现一下常用的数据结构，所以就有了这篇文章，维基百科上关于红黑树的基本描述如下：
+
+红黑树（英语：Red–black tree）是一种自平衡二叉查找树，可以在O(log n)时间内做查找，插入和删除。
+
+性质红黑树是每个节点都带有颜色属性的二叉查找树，颜色为红色或黑色。在二叉查找树强制一般要求以外，对于任何有效的红黑树我们增加了如下的额外要求：   
+
+节点是红色">
+<meta property="og:type" content="article">
+<meta property="og:title" content="红黑树">
+<meta property="og:url" content="http://yoursite.com/2016/05/16/红黑树/index.html">
+<meta property="og:site_name" content="zjiash的博客">
+<meta property="og:description" content="最近在复习数据结构，打算用Go语言实现一下常用的数据结构，所以就有了这篇文章，维基百科上关于红黑树的基本描述如下：
+
+红黑树（英语：Red–black tree）是一种自平衡二叉查找树，可以在O(log n)时间内做查找，插入和删除。
+
+性质红黑树是每个节点都带有颜色属性的二叉查找树，颜色为红色或黑色。在二叉查找树强制一般要求以外，对于任何有效的红黑树我们增加了如下的额外要求：   
+
+节点是红色">
+<meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rbtree.png">
+<meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/left_rotate.jpg">
+<meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/right_rotate.jpg">
+<meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_3.png">
+<meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_4.png">
+<meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_5.png">
+<meta property="og:updated_time" content="2016-05-17T04:31:11.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="红黑树">
+<meta name="twitter:description" content="最近在复习数据结构，打算用Go语言实现一下常用的数据结构，所以就有了这篇文章，维基百科上关于红黑树的基本描述如下：
+
+红黑树（英语：Red–black tree）是一种自平衡二叉查找树，可以在O(log n)时间内做查找，插入和删除。
+
+性质红黑树是每个节点都带有颜色属性的二叉查找树，颜色为红色或黑色。在二叉查找树强制一般要求以外，对于任何有效的红黑树我们增加了如下的额外要求：   
+
+节点是红色">
+<meta name="twitter:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rbtree.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/05/16/红黑树/"/>
+
+
+
+
+
+  <title>红黑树 | zjiash的博客</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">zjiash的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/16/红黑树/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                红黑树
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-16T10:24:31+08:00">
+                2016-05-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/05/16/红黑树/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/05/16/红黑树/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近在复习数据结构，打算用Go语言实现一下常用的数据结构，所以就有了这篇文章，维基百科上关于红黑树的基本描述如下：</p>
+<blockquote>
+<p>红黑树（英语：Red–black tree）是一种自平衡二叉查找树，可以在O(log n)时间内做查找，插入和删除。</p>
+</blockquote>
+<h2 id="性质"><a href="#性质" class="headerlink" title="性质"></a>性质</h2><p>红黑树是每个节点都带有颜色属性的二叉查找树，颜色为红色或黑色。在二叉查找树强制一般要求以外，对于任何有效的红黑树我们增加了如下的额外要求：   </p>
+<ol>
+<li>节点是红色或黑色。</li>
+<li>根是黑色。</li>
+<li>所有叶子都是黑色（叶子是NIL节点，这个特性在插入里面用不到，在节点删除里面起作用）。</li>
+<li>每个红色节点必须有两个黑色的子节点。（从每个叶子到根的所有路径上不能有两个连续的红色节点。）</li>
+<li>从任一节点到其每个叶子的所有简单路径都包含相同数目的黑色节点。</li>
+</ol>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rbtree.png" width="500" height="300" alt="红黑树示例图" style="clear: both; display: block; margin:auto; "></p>
+<p>这些约束确保了红黑树的关键特性：从根到叶子的最长的可能路径不多于最短的可能路径的两倍长。结果是这个树大致上是平衡的。因为操作比如插入、删除和查找某个值的最坏情况时间都要求与树的高度成比例，这个在高度上的理论上限允许红黑树在最坏情况下都是高效的，而不同于普通的二叉查找树。</p>
+<p>要知道为什么这些性质确保了这个结果，注意到性质4导致了路径不能有两个毗连的红色节点就足够了。最短的可能路径都是黑色节点，最长的可能路径有交替的红色和黑色节点。因为根据性质5所有最长的路径都有相同数目的黑色节点，这就表明了没有路径能多于任何其他路径的两倍长。</p>
+<h2 id="实现准备"><a href="#实现准备" class="headerlink" title="实现准备"></a>实现准备</h2><p><strong>基本定义</strong>，包括节点和树的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">const (</span><br><span class="line">    RED   bool = true</span><br><span class="line">    BLACK bool = false</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">type RBNode struct &#123;</span><br><span class="line">    value               int64</span><br><span class="line">    color               bool</span><br><span class="line">    left, right, parent *RBNode</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type RBTree struct &#123;</span><br><span class="line">    root *RBNode</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>基本操作</strong>，包括左旋和右旋：</p>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/left_rotate.jpg" width="400" height="150" alt="左旋示例图" style="clear: both; display: block; margin:auto; "></p>
+<p><strong>左旋</strong>：以P为轴心左旋，左旋必须要有右子节点，右子节点N成为P的父亲，N的左子节点成为P的右子节点</p>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/right_rotate.jpg" width="400" height="160" alt="右旋示例图" style="clear: both; display: block; margin:auto; "></p>
+<p><strong>右旋</strong>：以P为轴心右旋，右旋必须要有左子节点，左子节点N成为P的父亲，N的右子节点成为P的左子节点</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">// 只贴左旋的代码，右旋完全类似</span><br><span class="line">// 注意：如果树的root可能发生变化，需要返回旋转后的父亲节点</span><br><span class="line">func (self *RBNode) leftRotate() (*RBNode, error) &#123;</span><br><span class="line">    var root *RBNode</span><br><span class="line">    if self == nil &#123;</span><br><span class="line">        return root, nil</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    parent := self.parent</span><br><span class="line">    rightChild := self.right</span><br><span class="line">    if rightChild == nil &#123;</span><br><span class="line">        return root, errors.New(&quot;left rotate node without right child&quot;)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // rotate</span><br><span class="line">    rightChildLeft := rightChild.left</span><br><span class="line">    rightChild.left = self</span><br><span class="line">    self.parent = rightChild</span><br><span class="line">    self.right = rightChildLeft</span><br><span class="line">    if rightChildLeft != nil &#123;</span><br><span class="line">        rightChildLeft.parent = self</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if parent == nil &#123;</span><br><span class="line">        root = rightChild</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // 判断左右</span><br><span class="line">        if parent.left == self &#123;</span><br><span class="line">            parent.left = rightChild</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            parent.right = rightChild</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    rightChild.parent = parent</span><br><span class="line"></span><br><span class="line">    return root, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h2><p>二叉搜索树插入的节点一定是叶子节点，因此考虑性质5，则插入节点只能是红色的。首先实现二叉搜索树的插入：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">// 插入，二叉搜索树的插入方法，插入成功之后进行调整</span><br><span class="line">func (self *RBTree) insertNode(node *RBNode, data int64) &#123;</span><br><span class="line">    if node.value &gt;= data &#123;</span><br><span class="line">        if node.left == nil &#123;</span><br><span class="line">            tmp := NewRBNode(data)</span><br><span class="line">            tmp.parent = node</span><br><span class="line">            node.left = tmp</span><br><span class="line">            self.adjust(tmp)</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            self.insertNode(node.left, data)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        if node.right == nil &#123;</span><br><span class="line">            tmp := NewRBNode(data)</span><br><span class="line">            tmp.parent = node</span><br><span class="line">            node.right = tmp</span><br><span class="line">            self.adjust(tmp)</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            self.insertNode(node.right, data)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>红黑树的调整分5种情况，实际上是7种情况，不过有两种情况是对称的，有的情况需要递归到其他情况：</p>
+<p><strong>情形1</strong>: 新节点N位于树的根上，没有父节点</p>
+<ul>
+<li>在这种情形下（其他情况递归也可能到这种情况），我们把它重绘为黑色以满足性质2。因为它在每个路径上对黑节点数目增加一，性质5符合。</li>
+</ul>
+<p><strong>情形2</strong>: 新节点的父节点P是黑色</p>
+<ul>
+<li>性质4没有失效（新节点是红色的）。</li>
+<li>在这种情形下，树仍是有效的。性质5也未受到威胁，尽管新节点N有两个黑色叶子子节点；但由于新节点N是红色，通过它的每个子节点的路径就都有同通过它所取代的黑色的叶子的路径同样数目的黑色节点，所以依然满足这个性质。</li>
+</ul>
+<p><strong>情形3</strong>: 如果父节点P和叔父节点U二者都是红色</p>
+<ul>
+<li>此时新插入节点N做为P的左子节点或右子节点都属于情形3，这里右图仅显示N做为P左子的情形，则我们可以将它们两个重绘为黑色并重绘祖父节点G为红色（用来保持性质5）。</li>
+<li>现在我们的新节点N有了一个黑色的父节点P。因为通过父节点P或叔父节点U的任何路径都必定通过祖父节点G，在这些路径上的黑节点数目没有改变。</li>
+<li>但是，红色的祖父节点G可能是根节点，这就违反了性质2，也有可能祖父节点G的父节点是红色的，这就违反了性质4。为了解决这个问题，我们在祖父节点G上递归地进行情形1的整个过程。（把G当成是新加入的节点进行各种情形的检查）</li>
+</ul>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_3.png" width="400" height="150" alt="情形3" style="clear: both; display: block; margin:auto; "></p>
+<p><strong>情形4</strong>: 父节点P是红色而叔父节点U是黑色或缺少，并且新节点N是其父节点P的右子节点而父节点P又是其父节点的左子节点，简称为“左右”</p>
+<ul>
+<li>在这种情形下，我们进行一次左旋转调换新节点和其父节点的角色;</li>
+<li>接着，我们按情形5处理以前的父节点P以解决仍然失效的性质4。注意这个改变会导致某些路径通过它们以前不通过的新节点N（比如图中1号叶子节点）或不通过节点P（比如图中3号叶子节点），但由于这两个节点都是红色的，所以性质5仍有效。</li>
+</ul>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_4.png" width="400" height="150" alt="情形4" style="clear: both; display: block; margin:auto; "></p>
+<p><strong>情形5</strong>: 父节点P是红色而叔父节点U是黑色或缺少，新节点N是其父节点的左子节点，而父节点P又是其父节点G的左子节点。简称为“左左”</p>
+<ul>
+<li>在这种情形下，我们进行针对祖父节点G的一次右旋转；在旋转产生的树中，以前的父节点P现在是新节点N和以前的祖父节点G的父节点。我们知道以前的祖父节点G是黑色，否则父节点P就不可能是红色（如果P和G都是红色就违反了性质4，所以G必须是黑色）。我们切换以前的父节点P和祖父节点G的颜色，结果的树满足性质4。性质5也仍然保持满足，因为通过这三个节点中任何一个的所有路径以前都通过祖父节点G，现在它们都通过以前的父节点P。在各自的情形下，这都是三个节点中唯一的黑色节点。</li>
+</ul>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_5.png" width="400" height="150" alt="情形5" style="clear: both; display: block; margin:auto; "></p>
+<p><strong>调整代码如下</strong>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">func (self *RBTree) adjust(node *RBNode) &#123;</span><br><span class="line">    parent := node.parent</span><br><span class="line">    if parent == nil &#123;</span><br><span class="line">        // 情形1：（递归后）新节点位于树的根上</span><br><span class="line">        node.color = BLACK</span><br><span class="line">        self.root = node</span><br><span class="line">        return</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if parent.color == BLACK &#123;</span><br><span class="line">        // 情形2：新节点的父节点P是黑色，性质不失效</span><br><span class="line">        return</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        uncle := node.getUncle()</span><br><span class="line">        grandParent := node.getGrandParent()</span><br><span class="line">        if uncle != nil &amp;&amp; uncle.color == RED &#123;</span><br><span class="line">            // 情形3：父节点和叔父节点均为红色</span><br><span class="line">            // 处理：父节点和叔父节点转为黑色，祖父节点改成红色，递归处理祖父节点</span><br><span class="line">            node.parent.color = BLACK</span><br><span class="line">            uncle.color = BLACK</span><br><span class="line">            grandParent.color = RED</span><br><span class="line">            self.adjust(grandParent)</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            isLeft := (node == parent.left)</span><br><span class="line">            isParentLeft := (node.parent == grandParent.left)</span><br><span class="line">            if isLeft &amp;&amp; isParentLeft &#123;</span><br><span class="line">                // 情形5：左左</span><br><span class="line">                // 处理：祖父节点右旋</span><br><span class="line">                node.parent.color = BLACK</span><br><span class="line">                grandParent.color = RED</span><br><span class="line">                self.rotateRight(grandParent)</span><br><span class="line">            &#125; else if !isLeft &amp;&amp; isParentLeft &#123;</span><br><span class="line">                // 情形4：左右</span><br><span class="line">                // 处理：父节点左旋，变成情形4左左</span><br><span class="line">                self.rotateLeft(node.parent)</span><br><span class="line">                // 现在的node.parent表示原来的祖父节点</span><br><span class="line">                self.rotateRight(node.parent)</span><br><span class="line"></span><br><span class="line">                node.color = BLACK</span><br><span class="line">                node.left.color = RED</span><br><span class="line">                node.right.color = RED</span><br><span class="line">            &#125; else if isLeft &amp;&amp; !isParentLeft &#123;</span><br><span class="line">                // 情形4对称：右左</span><br><span class="line">                self.rotateRight(node.parent)</span><br><span class="line">                self.rotateLeft(node.parent)</span><br><span class="line"></span><br><span class="line">                node.color = BLACK</span><br><span class="line">                node.left.color = RED</span><br><span class="line">                node.right.color = RED</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                // 情形5对称：右右</span><br><span class="line">                node.parent.color = BLACK</span><br><span class="line">                grandParent.color = RED</span><br><span class="line">                self.rotateLeft(grandParent)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h2><p>暂时没有实现删除，后续有时间会加上</p>
+<p>参考文献：</p>
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/%E7%BA%A2%E9%BB%91%E6%A0%91" target="_blank" rel="external">维基百科</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Go/" rel="tag"># Go</a>
+          
+            <a href="/tags/Data-Structure/" rel="tag"># Data Structure</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/04/01/Http-Header详解/" rel="next" title="Http Header详解">
+                <i class="fa fa-chevron-left"></i> Http Header详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/06/15/Go语言圣经读后感/" rel="prev" title="Go语言圣经读后感">
+                Go语言圣经读后感 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/05/16/红黑树/"
+           data-title="红黑树" data-url="http://yoursite.com/2016/05/16/红黑树/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="zjiash" />
+          <p class="site-author-name" itemprop="name">zjiash</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/zjiash" target="_blank" title="github">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  github
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#性质"><span class="nav-number">1.</span> <span class="nav-text">性质</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现准备"><span class="nav-number">2.</span> <span class="nav-text">实现准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插入"><span class="nav-number">3.</span> <span class="nav-text">插入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#删除"><span class="nav-number">4.</span> <span class="nav-text">删除</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zjiash</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问人数
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"zjiash"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

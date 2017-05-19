@@ -1,0 +1,834 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Spark," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="项目中使用到了Spark，一直都是处在应用状态，最近有时间想研究下Spark是如何运行的。之前对Hadoop和Scala都有所了解，觉得Spark可以看成是分布式的Scala执行环境，因为各种RDD的转换实在是和Scala的函数式编程太像了。相比Hadoop，Spark可以看成是基于内存的MapReduce。实际上这些认识都太肤浅了，这个系列会简单剖析下Spark的运行原理。
+在Hadoop2.0">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark任务提交之Deploy">
+<meta property="og:url" content="http://yoursite.com/2017/04/10/Spark任务提交之Deploy/index.html">
+<meta property="og:site_name" content="zjiash的博客">
+<meta property="og:description" content="项目中使用到了Spark，一直都是处在应用状态，最近有时间想研究下Spark是如何运行的。之前对Hadoop和Scala都有所了解，觉得Spark可以看成是分布式的Scala执行环境，因为各种RDD的转换实在是和Scala的函数式编程太像了。相比Hadoop，Spark可以看成是基于内存的MapReduce。实际上这些认识都太肤浅了，这个系列会简单剖析下Spark的运行原理。
+在Hadoop2.0">
+<meta property="og:updated_time" content="2017-04-24T06:42:23.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark任务提交之Deploy">
+<meta name="twitter:description" content="项目中使用到了Spark，一直都是处在应用状态，最近有时间想研究下Spark是如何运行的。之前对Hadoop和Scala都有所了解，觉得Spark可以看成是分布式的Scala执行环境，因为各种RDD的转换实在是和Scala的函数式编程太像了。相比Hadoop，Spark可以看成是基于内存的MapReduce。实际上这些认识都太肤浅了，这个系列会简单剖析下Spark的运行原理。
+在Hadoop2.0">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/04/10/Spark任务提交之Deploy/"/>
+
+
+
+
+
+  <title>Spark任务提交之Deploy | zjiash的博客</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">zjiash的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/10/Spark任务提交之Deploy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Spark任务提交之Deploy
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-10T21:16:22+08:00">
+                2017-04-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/大数据/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/10/Spark任务提交之Deploy/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/10/Spark任务提交之Deploy/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>项目中使用到了Spark，一直都是处在应用状态，最近有时间想研究下Spark是如何运行的。之前对Hadoop和Scala都有所了解，觉得Spark可以看成是分布式的Scala执行环境，因为各种RDD的转换实在是和Scala的函数式编程太像了。相比Hadoop，Spark可以看成是基于内存的MapReduce。实际上这些认识都太肤浅了，这个系列会简单剖析下Spark的运行原理。</p>
+<p>在Hadoop2.0版本之前，Hadoop的JobTrack需要同时承担资源管理以及应用监控两重任务，容易成为瓶颈，限制集群的最大规模。引入YARN之后，全局的ResourceManager（RM）和与每个应用相关的ApplicationMaster（AM）承担了JobTrack的功能。RM负责接收应用，并根据集群资源情况调度（调度器Scheduler组件）应用运行；每个被调度的应用会在集群中启动一个AM，AM负责同调度器协商以获取合适的容器，并跟踪这些容器的状态和监控其进度。</p>
+<p>Spark在资源管理和调度方式上采用了类似于Hadoop YARN的方式。最上层是资源调度器，它负责分配资源和调度注册到Spark中的所有应用，Spark有自带的standalone集群框架，也可以使用Mesos或是YARN等作为其资源调度框架。在每一个应用内部，Spark又实现了任务调度器（由drive负责），负责任务的调度和协调。本文主要介绍资源分配的部分，由于项目使用的Spark版本为1.6.2，因此本系列的源码都基于该版本。</p>
+<p>提交spark任务需要通过<code>spark-submit</code>命令，对应的<code>org.apache.spark.deploy.SparkSubmit</code>的main方法</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span></span>(args: <span class="type">Array</span>[<span class="type">String</span>]): <span class="type">Unit</span> = &#123;</span><br><span class="line">  <span class="keyword">val</span> appArgs = <span class="keyword">new</span> <span class="type">SparkSubmitArguments</span>(args)</span><br><span class="line">  ...</span><br><span class="line">  appArgs.action <span class="keyword">match</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">SUBMIT</span> =&gt; submit(appArgs)</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">KILL</span> =&gt; kill(appArgs)</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">REQUEST_STATUS</span> =&gt; requestStatus(appArgs)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submit</span></span>(args: <span class="type">SparkSubmitArguments</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">  <span class="keyword">val</span> (childArgs, childClasspath, sysProps, childMainClass) = prepareSubmitEnvironment(args)</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// 中间有些曲折，实际上调用的就是runMain</span></span><br><span class="line">  runMain(childArgs, childClasspath, sysProps, childMainClass, args.verbose)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>runMain</code>通过反射调用childMainClass，主要看看<code>prepareSubmitEnvironment</code>。该方法为应用提交准备环境，设置命令行参数，比如应用运行的集群master以及driver的部署方式。driver的部署模式有两种：client和cluster，默认是client，直接在本地运行driver（此时的childMainClass就是application main class），cluster则是将driver也放到集群上运行。</p>
+<p>cluster的部署方式主要有三种：</p>
+<ol>
+<li>standalone的childMainClass是<code>org.apache.spark.deploy.Client</code></li>
+<li>yarn模式的childMainClass是<code>org.apache.spark.deploy.yarn.Client</code></li>
+<li>mesos模式的childMainClass是<code>org.apache.spark.deploy.rest.RestSubmissionClient</code></li>
+</ol>
+<p>奇怪的是，源码里面根本没有<code>org.apache.spark.deploy.yarn.Client</code>这个类，先研究standalone这种模式好了。（原来这个类在yarn那个目录下，IDE没有识别出来，先把基本的流程搞清楚，后续再研究yarn的模式）</p>
+<p><code>org.apache.spark.deploy.Client</code>的main方法会创建一个<code>ClientEndpoint</code>，启动之后（onStart方法）会向master发送RequestSubmitDriver消息，master收到消息的代码如下：</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">RequestSubmitDriver</span>(description) =&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (state != <span class="type">RecoveryState</span>.<span class="type">ALIVE</span>) &#123;</span><br><span class="line">      ...</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      logInfo(<span class="string">"Driver submitted "</span> + description.command.mainClass)</span><br><span class="line">      <span class="keyword">val</span> driver = createDriver(description)</span><br><span class="line">      <span class="comment">// driver封装的cmd就是application main class</span></span><br><span class="line">      persistenceEngine.addDriver(driver)</span><br><span class="line">      waitingDrivers += driver</span><br><span class="line">      drivers.add(driver)</span><br><span class="line">      <span class="comment">// 调度</span></span><br><span class="line">      schedule()</span><br><span class="line">      <span class="comment">// 告诉client提交成功了，把driver.id返回</span></span><br><span class="line">      context.reply(<span class="type">SubmitDriverResponse</span>(self, <span class="literal">true</span>, <span class="type">Some</span>(driver.id),</span><br><span class="line">        <span class="string">s"Driver successfully submitted as <span class="subst">$&#123;driver.id&#125;</span>"</span>))</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>下面是schedule的代码，每次有新的应用提交或者资源可用变动（resource availability changes）时会被调用，先调度driver程序，然后再调度app，调度app的方式是从各个worker里面和App进行匹配，看需要分配多少个cpu。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">schedule</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">if</span> (state != <span class="type">RecoveryState</span>.<span class="type">ALIVE</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Drivers take strict precedence over executors</span></span><br><span class="line">    <span class="keyword">val</span> shuffledAliveWorkers = <span class="type">Random</span>.shuffle(workers.toSeq.filter(_.state == <span class="type">WorkerState</span>.<span class="type">ALIVE</span>))</span><br><span class="line">    <span class="keyword">val</span> numWorkersAlive = shuffledAliveWorkers.size</span><br><span class="line">    <span class="keyword">var</span> curPos = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> (driver &lt;- waitingDrivers.toList) &#123; <span class="comment">// iterate over a copy of waitingDrivers</span></span><br><span class="line">      <span class="comment">// We assign workers to each waiting driver in a round-robin fashion. For each driver, we</span></span><br><span class="line">      <span class="comment">// start from the last worker that was assigned a driver, and continue onwards until we have</span></span><br><span class="line">      <span class="comment">// explored all alive workers.</span></span><br><span class="line">      <span class="keyword">var</span> launched = <span class="literal">false</span></span><br><span class="line">      <span class="keyword">var</span> numWorkersVisited = <span class="number">0</span></span><br><span class="line">      <span class="keyword">while</span> (numWorkersVisited &lt; numWorkersAlive &amp;&amp; !launched) &#123;</span><br><span class="line">        <span class="keyword">val</span> worker = shuffledAliveWorkers(curPos)</span><br><span class="line">        numWorkersVisited += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> (worker.memoryFree &gt;= driver.desc.mem &amp;&amp; worker.coresFree &gt;= driver.desc.cores) &#123;</span><br><span class="line">          <span class="comment">// 启动driver</span></span><br><span class="line">          launchDriver(worker, driver)</span><br><span class="line">          waitingDrivers -= driver</span><br><span class="line">          launched = <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">        curPos = (curPos + <span class="number">1</span>) % numWorkersAlive</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    startExecutorsOnWorkers()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// executor的调度需要结合app，有application之后才会调用，这个在后续的任务调度会分析，需要driver先运行起来之后才会有</span></span><br><span class="line">  <span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">startExecutorsOnWorkers</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="comment">// Right now this is a very simple FIFO scheduler. We keep trying to fit in the first app</span></span><br><span class="line">    <span class="comment">// in the queue, then the second app, etc.</span></span><br><span class="line">    <span class="keyword">for</span> (app &lt;- waitingApps <span class="keyword">if</span> app.coresLeft &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">val</span> coresPerExecutor: <span class="type">Option</span>[<span class="type">Int</span>] = app.desc.coresPerExecutor</span><br><span class="line">      <span class="comment">// Filter out workers that don't have enough resources to launch an executor</span></span><br><span class="line">      <span class="keyword">val</span> usableWorkers = workers.toArray.filter(_.state == <span class="type">WorkerState</span>.<span class="type">ALIVE</span>)</span><br><span class="line">        .filter(worker =&gt; worker.memoryFree &gt;= app.desc.memoryPerExecutorMB &amp;&amp;</span><br><span class="line">          worker.coresFree &gt;= coresPerExecutor.getOrElse(<span class="number">1</span>))</span><br><span class="line">        .sortBy(_.coresFree).reverse</span><br><span class="line">      <span class="keyword">val</span> assignedCores = scheduleExecutorsOnWorkers(app, usableWorkers, spreadOutApps)</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Now that we've decided how many cores to allocate on each worker, let's allocate them</span></span><br><span class="line">      <span class="keyword">for</span> (pos &lt;- <span class="number">0</span> until usableWorkers.length <span class="keyword">if</span> assignedCores(pos) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        allocateWorkerResourceToExecutors(</span><br><span class="line">          app, assignedCores(pos), coresPerExecutor, usableWorkers(pos))</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p><code>startExecutorsOnWorkers()</code>按照FIFO方式为每个app分配executor，<code>allocateWorkerResourceToExecutors</code>通过<code>launchExecutor(worker, exec)</code>启动executor。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">launchDriver</span></span>(worker: <span class="type">WorkerInfo</span>, driver: <span class="type">DriverInfo</span>) &#123;</span><br><span class="line">  logInfo(<span class="string">"Launching driver "</span> + driver.id + <span class="string">" on worker "</span> + worker.id)</span><br><span class="line">  worker.addDriver(driver)</span><br><span class="line">  driver.worker = <span class="type">Some</span>(worker)</span><br><span class="line">  worker.endpoint.send(<span class="type">LaunchDriver</span>(driver.id, driver.desc))</span><br><span class="line">  driver.state = <span class="type">DriverState</span>.<span class="type">RUNNING</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">launchExecutor</span></span>(worker: <span class="type">WorkerInfo</span>, exec: <span class="type">ExecutorDesc</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">  logInfo(<span class="string">"Launching executor "</span> + exec.fullId + <span class="string">" on worker "</span> + worker.id)</span><br><span class="line">  worker.addExecutor(exec)</span><br><span class="line">  worker.endpoint.send(<span class="type">LaunchExecutor</span>(masterUrl,</span><br><span class="line">    exec.application.id, exec.id, exec.application.desc, exec.cores, exec.memory))</span><br><span class="line">  exec.application.driver.send(</span><br><span class="line">    <span class="type">ExecutorAdded</span>(exec.id, worker.id, worker.hostPort, exec.cores, exec.memory))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>二者都是给相应的worker发送Launch消息，executor起来后，还需要给driver发送ExecutorAdded的消息，表示任务已经开始做了。</p>
+<p>每个<code>org.apache.spark.deploy.worker.Worker</code>启动后会通过<code>registerWithMaster()</code>方法向Master注册。收到Launch消息后，worker会启动相应的线程运行driver和executor。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">LaunchDriver</span>(driverId, driverDesc) =&gt; &#123;</span><br><span class="line">    logInfo(<span class="string">s"Asked to launch driver <span class="subst">$driverId</span>"</span>)</span><br><span class="line">    <span class="keyword">val</span> driver = <span class="keyword">new</span> <span class="type">DriverRunner</span>(</span><br><span class="line">      conf,</span><br><span class="line">      driverId,</span><br><span class="line">      workDir,</span><br><span class="line">      sparkHome,</span><br><span class="line">      driverDesc.copy(command = <span class="type">Worker</span>.maybeUpdateSSLSettings(driverDesc.command, conf)),</span><br><span class="line">      self,</span><br><span class="line">      workerUri,</span><br><span class="line">      securityMgr)</span><br><span class="line">    drivers(driverId) = driver</span><br><span class="line">    driver.start()</span><br><span class="line"></span><br><span class="line">    coresUsed += driverDesc.cores</span><br><span class="line">    memoryUsed += driverDesc.mem</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 收到LaunchExecutor之后，启动ExecutorRunner，并给Master发送消息</span></span><br><span class="line">  <span class="comment">// manager是ExecutorRunner，start之后会下载和运行executor</span></span><br><span class="line">  manager.start()</span><br><span class="line">  sendToMaster(<span class="type">ExecutorStateChanged</span>(appId, execId, manager.state, <span class="type">None</span>, <span class="type">None</span>))</span><br></pre></td></tr></table></figure>
+<p>Master收到ExecutorStateChanged消息之后，会给client发送ExecutorUpdated消息，如果任务结束，还会移除executor。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">ExecutorStateChanged</span>(appId, execId, state, message, exitStatus) =&gt; &#123;</span><br><span class="line">  <span class="keyword">val</span> execOption = idToApp.get(appId).flatMap(app =&gt; app.executors.get(execId))</span><br><span class="line">  execOption <span class="keyword">match</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">Some</span>(exec) =&gt; &#123;</span><br><span class="line">      <span class="keyword">val</span> appInfo = idToApp(appId)</span><br><span class="line">      <span class="keyword">val</span> oldState = exec.state</span><br><span class="line">      exec.state = state</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (state == <span class="type">ExecutorState</span>.<span class="type">RUNNING</span>) &#123;</span><br><span class="line">        assert(oldState == <span class="type">ExecutorState</span>.<span class="type">LAUNCHING</span>,</span><br><span class="line">          <span class="string">s"executor <span class="subst">$execId</span> state transfer from <span class="subst">$oldState</span> to RUNNING is illegal"</span>)</span><br><span class="line">        appInfo.resetRetryCount()</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 给driver发消息</span></span><br><span class="line">      exec.application.driver.send(<span class="type">ExecutorUpdated</span>(execId, state, message, exitStatus))</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (<span class="type">ExecutorState</span>.isFinished(state)) &#123;</span><br><span class="line">        <span class="comment">// Remove this executor from the worker and app</span></span><br><span class="line">        logInfo(<span class="string">s"Removing executor <span class="subst">$&#123;exec.fullId&#125;</span> because it is <span class="subst">$state</span>"</span>)</span><br><span class="line">        <span class="comment">// If an application has already finished, preserve its</span></span><br><span class="line">        <span class="comment">// state to display its information properly on the UI</span></span><br><span class="line">        <span class="keyword">if</span> (!appInfo.isFinished) &#123;</span><br><span class="line">          appInfo.removeExecutor(exec)</span><br><span class="line">        &#125;</span><br><span class="line">        exec.worker.removeExecutor(exec)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">val</span> normalExit = exitStatus == <span class="type">Some</span>(<span class="number">0</span>)</span><br><span class="line">        <span class="comment">// Only retry certain number of times so we don't go into an infinite loop.</span></span><br><span class="line">        <span class="keyword">if</span> (!normalExit) &#123;</span><br><span class="line">          <span class="keyword">if</span> (appInfo.incrementRetryCount() &lt; <span class="type">ApplicationState</span>.<span class="type">MAX_NUM_RETRY</span>) &#123;</span><br><span class="line">            schedule()</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">val</span> execs = appInfo.executors.values</span><br><span class="line">            <span class="keyword">if</span> (!execs.exists(_.state == <span class="type">ExecutorState</span>.<span class="type">RUNNING</span>)) &#123;</span><br><span class="line">              logError(<span class="string">s"Application <span class="subst">$&#123;appInfo.desc.name&#125;</span> with ID <span class="subst">$&#123;appInfo.id&#125;</span> failed "</span> +</span><br><span class="line">                <span class="string">s"<span class="subst">$&#123;appInfo.retryCount&#125;</span> times; removing it"</span>)</span><br><span class="line">              removeApplication(appInfo, <span class="type">ApplicationState</span>.<span class="type">FAILED</span>)</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">None</span> =&gt;</span><br><span class="line">      logWarning(<span class="string">s"Got status update for unknown executor <span class="subst">$appId</span>/<span class="subst">$execId</span>"</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="总结流程"><a href="#总结流程" class="headerlink" title="总结流程"></a>总结流程</h3><ol>
+<li>SparkSubmit启动Client，如果是local模式，则直接在本地运行driver，Client就是driver</li>
+<li>如果是cluster模式，Client发送RequestSubmitDriver给Master，根据参数确定部署的方式</li>
+<li>Master接收到请求之后就开始调度，先调度driver程序，然后再调度executor（等待driver先起来），调度完成后会给Client返回SubmitDriverResponse消息</li>
+<li>Master为driver分配worker，发送LaunchDriver消息给worker，启动driver（应用主类）</li>
+<li>driver会提交app，向Master发送RegisterApplication消息，有app之后才会调度executor</li>
+<li>Master根据app为executor分配worker，发送LaunchExecutor消息给worker，启动executor，worker会给Master返回ExecutorStateChanged消息</li>
+<li>Master收到ExecutorStateChanged消息会给driver发送ExecutorUpdated消息</li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spark/" rel="tag"># Spark</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/05/HBase架构/" rel="next" title="HBase架构">
+                <i class="fa fa-chevron-left"></i> HBase架构
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/17/Spark任务提交之RDD/" rel="prev" title="Spark任务提交之RDD">
+                Spark任务提交之RDD <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2017/04/10/Spark任务提交之Deploy/"
+           data-title="Spark任务提交之Deploy" data-url="http://yoursite.com/2017/04/10/Spark任务提交之Deploy/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="zjiash" />
+          <p class="site-author-name" itemprop="name">zjiash</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/zjiash" target="_blank" title="github">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  github
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#总结流程"><span class="nav-number">1.</span> <span class="nav-text">总结流程</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zjiash</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问人数
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"zjiash"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,827 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Probability Theory," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="问题春节回家见到的一种新的赌博方式（不得不说湖北人确实喜欢赌博），规则如下: 
+
+一副扑克牌去掉大小王剩下52张，洗好牌后每次从牌堆里面按顺序取两张，计算两张牌的点数之和（J、Q、K分布表示11、12和13），猜单双。取出的牌使用完成后，不会马上进入牌堆，最后剩下的6张牌作废（避免有人记住最后剩下的牌），重新洗牌开始进行新的一轮活动。
+
+动手实践了解规则之后，我直觉出现单和双的概率是不均等的，至少">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于一个赌博游戏的思考">
+<meta property="og:url" content="http://yoursite.com/2017/02/06/关于一个赌博游戏的思考/index.html">
+<meta property="og:site_name" content="zjiash的博客">
+<meta property="og:description" content="问题春节回家见到的一种新的赌博方式（不得不说湖北人确实喜欢赌博），规则如下: 
+
+一副扑克牌去掉大小王剩下52张，洗好牌后每次从牌堆里面按顺序取两张，计算两张牌的点数之和（J、Q、K分布表示11、12和13），猜单双。取出的牌使用完成后，不会马上进入牌堆，最后剩下的6张牌作废（避免有人记住最后剩下的牌），重新洗牌开始进行新的一轮活动。
+
+动手实践了解规则之后，我直觉出现单和双的概率是不均等的，至少">
+<meta property="og:updated_time" content="2017-02-06T10:20:08.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="关于一个赌博游戏的思考">
+<meta name="twitter:description" content="问题春节回家见到的一种新的赌博方式（不得不说湖北人确实喜欢赌博），规则如下: 
+
+一副扑克牌去掉大小王剩下52张，洗好牌后每次从牌堆里面按顺序取两张，计算两张牌的点数之和（J、Q、K分布表示11、12和13），猜单双。取出的牌使用完成后，不会马上进入牌堆，最后剩下的6张牌作废（避免有人记住最后剩下的牌），重新洗牌开始进行新的一轮活动。
+
+动手实践了解规则之后，我直觉出现单和双的概率是不均等的，至少">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/02/06/关于一个赌博游戏的思考/"/>
+
+
+
+
+
+  <title>关于一个赌博游戏的思考 | zjiash的博客</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">zjiash的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/06/关于一个赌博游戏的思考/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                关于一个赌博游戏的思考
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-02-06T16:31:16+08:00">
+                2017-02-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数学/" itemprop="url" rel="index">
+                    <span itemprop="name">数学</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/02/06/关于一个赌博游戏的思考/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/02/06/关于一个赌博游戏的思考/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>春节回家见到的一种新的赌博方式（不得不说湖北人确实喜欢赌博），规则如下: </p>
+<blockquote>
+<p>一副扑克牌去掉大小王剩下52张，洗好牌后每次从牌堆里面按顺序取两张，计算两张牌的点数之和（J、Q、K分布表示11、12和13），猜单双。取出的牌使用完成后，不会马上进入牌堆，最后剩下的6张牌作废（避免有人记住最后剩下的牌），重新洗牌开始进行新的一轮活动。</p>
+</blockquote>
+<h2 id="动手实践"><a href="#动手实践" class="headerlink" title="动手实践"></a>动手实践</h2><p>了解规则之后，我直觉出现单和双的概率是不均等的，至少在牌局的末尾，是可以根据之前出现的牌的情况制定某种策略，提高猜中概率的。粗略一想，最终结果为单的情况包括：先单后双/先双后单，为双的情况包括：两个双/两个单。如果不考虑一副牌里面单数牌比较多（多4张）的情况，似乎可以认为这个活动出现单双的概率是均等的。但是，事实是否确实如此呢？</p>
+<p>回来后写了个程序来模拟这个过程，想通过统计信息来观察概率是否均等，代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">public class Gambling &#123;</span><br><span class="line">    private int num;        // 数字个数，一副完整的扑克牌num=13</span><br><span class="line">    private int multiple;   // 每种数字个数，一副完整的扑克牌有4种花色</span><br><span class="line">    private int left;       // 最后的几张牌废弃掉</span><br><span class="line">    private int start;      // 统计的起始位置</span><br><span class="line">    private List&lt;Integer&gt; cards;</span><br><span class="line"></span><br><span class="line">    public Gambling(int num, int multiple, int left, int start) &#123;</span><br><span class="line">        this.num = num;</span><br><span class="line">        this.multiple = multiple;</span><br><span class="line">        this.left = left;</span><br><span class="line">        this.start = start;</span><br><span class="line"></span><br><span class="line">        cards = new ArrayList&lt;Integer&gt;(num * multiple);</span><br><span class="line">        for (int i = 0; i &lt; num * multiple; i++) &#123;</span><br><span class="line">            cards.add(i / multiple + 1);</span><br><span class="line">        &#125;</span><br><span class="line">        // System.out.println(&quot;arrays: &quot; + cards);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void sample(int times) &#123;</span><br><span class="line">        int totalOddNum = 0, totalEvenNum = 0;</span><br><span class="line">        for (int i = 0; i &lt; times; i++) &#123;</span><br><span class="line">            Random rnd = new Random(System.currentTimeMillis());</span><br><span class="line">            Collections.shuffle(cards, rnd);</span><br><span class="line"></span><br><span class="line">            int oddNum = 0, evenNum = 0;</span><br><span class="line">            for (int j = start; j &lt; (num * multiple - left) / 2; j++) &#123;</span><br><span class="line">                int value = cards.get(j * 2) + cards.get(j * 2 + 1);</span><br><span class="line">                if (value % 2 == 0) &#123;</span><br><span class="line">                    evenNum++;</span><br><span class="line">                    totalEvenNum++;</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    oddNum++;</span><br><span class="line">                    totalOddNum++;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            int total = oddNum + evenNum;</span><br><span class="line">            if (i &lt; 5) &#123;</span><br><span class="line">                System.out.println(String.format(&quot;#%d: oddRate = %.3f, evenRate = %.3f&quot;,</span><br><span class="line">                        i, oddNum * 1.0 / total, evenNum * 1.0 / total));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        int totalNum = totalOddNum + totalEvenNum;</span><br><span class="line">        System.out.println(String.format(&quot;total(%d): totalOddRate = %.5f, totalEvenRate = %.5f&quot;,</span><br><span class="line">                totalNum, totalOddNum * 1.0 / totalNum, totalEvenNum * 1.0 / totalNum));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Gambling gambling = new Gambling(13, 4, 6, 0);</span><br><span class="line">        gambling.sample(1000000);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行多次的结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">total(23000000): totalOddRate = 0.50739, totalEvenRate = 0.49261</span><br><span class="line">total(23000000): totalOddRate = 0.50695, totalEvenRate = 0.49305</span><br><span class="line">total(23000000): totalOddRate = 0.50724, totalEvenRate = 0.49276</span><br><span class="line">total(23000000): totalOddRate = 0.50651, totalEvenRate = 0.49349</span><br><span class="line">total(23000000): totalOddRate = 0.50629, totalEvenRate = 0.49371</span><br></pre></td></tr></table></figure>
+<p>从结果中可以清楚的看到，出现单的概率比出现双的概率高1.4%，结果非常稳定。这说明游戏中出现单双的概率是不均等的，看到这样的结果，我第一反应是：会不会是单数牌多4张造成的？立即将程序中的num从13改成12，再次运行发现：<font color="red">出现单的概率比出现双的概率高了约2%</font>，比之前的结果更不均衡了。</p>
+<h2 id="一点想法"><a href="#一点想法" class="headerlink" title="一点想法"></a>一点想法</h2><p>为什么会出现这样的情况？我回到数学论证上来考虑一个简单的例子：简化一副扑克，考虑只有4张牌的情况，2种花色和2种数字，排列的情况如下（不考虑花色的情况）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1、1、2、2</span><br><span class="line">1、2、1、2</span><br><span class="line">1、2、2、1</span><br><span class="line">2、1、1、2</span><br><span class="line">2、1、2、1</span><br><span class="line">2、2、1、1</span><br></pre></td></tr></table></figure>
+<p>不考虑最后牌作废的情况，一共可以进行12次赌博活动，其中出现单的次数为8，出现双的次数为4，并不是直观上的机会均等。在这个极端的例子里面，最终结果出现双的条件相对比较苛刻，要求相邻的数字相同才行，第一个数字与第二个数字相同的概率为1/3，不同的概率为2/3，导致出现单的概率偏高。如果数字种数更多，情况应该会更好一些。通过运行下面的代码，验证了我们的想法。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">for (int i = 1; i &lt; 7; i++) &#123;</span><br><span class="line">    Gambling gambling2 = new Gambling(i * 2, 2, 0, 0);</span><br><span class="line">    gambling2.sample(1000000);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Results:</span><br><span class="line">total(2000000): totalOddRate = 0.66579, totalEvenRate = 0.33421</span><br><span class="line">total(4000000): totalOddRate = 0.55100, totalEvenRate = 0.44900</span><br><span class="line">total(6000000): totalOddRate = 0.54564, totalEvenRate = 0.45436</span><br><span class="line">total(8000000): totalOddRate = 0.53384, totalEvenRate = 0.46616</span><br><span class="line">total(10000000): totalOddRate = 0.52858, totalEvenRate = 0.47142</span><br><span class="line">total(12000000): totalOddRate = 0.51977, totalEvenRate = 0.48023</span><br></pre></td></tr></table></figure>
+<p>上面的程序避免了单数牌和双数牌数目不一致的情况，更多的牌引入了更多的配对可能性，使得结果趋于均衡。如果考虑正常扑克的行为，会发现当单数牌多一种时，会导致出现双的概率增大。换句话说，13种牌单双概率的差异要比12和14种牌都要小。</p>
+<p>事实上按照排列组合的分析，应该是可以得到准确的结果，一个直观的解释是：奇偶性不同的牌组合才能得到单数的结果，当单数牌比较多的时候，奇偶性不同的牌组合之后，多出的牌结果肯定是双，这一事实导致了单双概率差距缩小，使得整个游戏更为公平。对于单数牌和双数牌相同的情况，似乎也可以用上面的简化case来解释。</p>
+<h2 id="赢钱策略"><a href="#赢钱策略" class="headerlink" title="赢钱策略"></a>赢钱策略</h2><p>根据上面的分析发现：出现单的概率要高，那押单是个不错的选择。如果根据一副牌已经出现的结果，来制定后面的押注策略，感觉应该还有更好的赢钱策略。这个留到回头在研究。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Probability-Theory/" rel="tag"># Probability Theory</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/06/15/Go语言圣经读后感/" rel="next" title="Go语言圣经读后感">
+                <i class="fa fa-chevron-left"></i> Go语言圣经读后感
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/02/06/《深入理解Java虚拟机》之内存布局/" rel="prev" title="《深入理解Java虚拟机》之内存布局">
+                《深入理解Java虚拟机》之内存布局 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2017/02/06/关于一个赌博游戏的思考/"
+           data-title="关于一个赌博游戏的思考" data-url="http://yoursite.com/2017/02/06/关于一个赌博游戏的思考/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="zjiash" />
+          <p class="site-author-name" itemprop="name">zjiash</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/zjiash" target="_blank" title="github">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  github
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#问题"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动手实践"><span class="nav-number">2.</span> <span class="nav-text">动手实践</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一点想法"><span class="nav-number">3.</span> <span class="nav-text">一点想法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#赢钱策略"><span class="nav-number">4.</span> <span class="nav-text">赢钱策略</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zjiash</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问人数
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"zjiash"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

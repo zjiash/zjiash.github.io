@@ -1,0 +1,930 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="HBase," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="概念和组件
+Region
+按行划分，负载均衡的最小单元
+按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同
+
+
+Region Servers
+维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region
+组件：
+BlockCache：读缓存，LRU缓存，每个Region Server一个
+WAL：日">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HBase架构">
+<meta property="og:url" content="http://yoursite.com/2017/04/05/HBase架构/index.html">
+<meta property="og:site_name" content="zjiash的博客">
+<meta property="og:description" content="概念和组件
+Region
+按行划分，负载均衡的最小单元
+按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同
+
+
+Region Servers
+维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region
+组件：
+BlockCache：读缓存，LRU缓存，每个Region Server一个
+WAL：日">
+<meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg">
+<meta property="og:updated_time" content="2017-04-26T08:01:33.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="HBase架构">
+<meta name="twitter:description" content="概念和组件
+Region
+按行划分，负载均衡的最小单元
+按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同
+
+
+Region Servers
+维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region
+组件：
+BlockCache：读缓存，LRU缓存，每个Region Server一个
+WAL：日">
+<meta name="twitter:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/04/05/HBase架构/"/>
+
+
+
+
+
+  <title>HBase架构 | zjiash的博客</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">zjiash的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/05/HBase架构/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                HBase架构
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-05T10:29:50+08:00">
+                2017-04-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/大数据/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/05/HBase架构/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/05/HBase架构/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="概念和组件"><a href="#概念和组件" class="headerlink" title="概念和组件"></a>概念和组件</h3><ol>
+<li>Region<ul>
+<li>按行划分，负载均衡的最小单元</li>
+<li>按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同</li>
+</ul>
+</li>
+<li>Region Servers<ul>
+<li>维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region</li>
+<li>组件：<ul>
+<li>BlockCache：读缓存，LRU缓存，每个Region Server一个</li>
+<li>WAL：日志，写数据先进日志，每个Region Server一个</li>
+<li>MemStore：写缓存，每个CF一个</li>
+<li>HFile：MemStore刷到disk</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>HMaster<ul>
+<li>协调：<ul>
+<li>为Region Server分配Regions</li>
+<li>负责Region Server的负载均衡</li>
+<li>发现失效的Region Server并重新分配其上的Regions</li>
+</ul>
+</li>
+<li>管理：处理schema更新请求，比如新建表等</li>
+</ul>
+</li>
+<li>ZooKeeper<ul>
+<li>保证只有一个HMaster</li>
+<li>对Region Servers和HMaster状态提供通知机制，HMaster需要借助zk来知道节点的状态</li>
+<li>存储Meta表的地址</li>
+</ul>
+</li>
+<li>Meta Table<ul>
+<li>Key: table, start key, region id</li>
+<li>Values: RegionServer</li>
+<li>Client第一次读写需要从zk获取Meta表地址，也就是负责该表的Region Server</li>
+</ul>
+</li>
+</ol>
+<h3 id="读写过程"><a href="#读写过程" class="headerlink" title="读写过程"></a>读写过程</h3><ol>
+<li>Read<ul>
+<li>通过zk获取Meta表，然后定位到相应的Region Server</li>
+<li>首先读BlockCache，然后读MemStore，如果都读不到，再读HFile，可能需要读取多个小的HFiles（读放大影响）</li>
+<li>Region Server负责的Regions一般都在本地，不过当Regions重新分配（负载均衡或失效）时，可能需要负责远程的Region，直到major compact将远程的Region合并到本地</li>
+</ul>
+</li>
+<li>Write<ul>
+<li>先写WAL，然后写MemStore，进入MemStore就表示写成功了（client收到成功消息）</li>
+<li>写是一个顺序增加的过程，所有更新和删除操作都是在后续的compact过程中进行的，更新是版本，删除通过标志位</li>
+</ul>
+</li>
+<li>Compact<ul>
+<li>minor compact：自动将小的HFiles合并成大HFile</li>
+<li>major compact：将一个Region上的所有HFiles写成一个HFile，每个CF一个HFile；可配置为自动，会消耗大量IO和网络资源（写放大影响），并不需要经常运行</li>
+</ul>
+</li>
+<li>Split<ul>
+<li>Region达到一定大小的时候，超过设置的阈值，会自动split为两个大小相等的Regions</li>
+</ul>
+</li>
+</ol>
+<h3 id="失败恢复"><a href="#失败恢复" class="headerlink" title="失败恢复"></a>失败恢复</h3><ol>
+<li>HMaster失效会选出新的HMaster</li>
+<li>HMaster通过zk感知Region Server的上下线</li>
+<li>通过replay WAL重新恢复下线的Region Server</li>
+</ol>
+<h3 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h3><ol>
+<li>优势<ul>
+<li>强一致性：写成功对所有读都同时立即可见</li>
+<li>可拓展性：HDFS以及Region的自动化分，拓展Region Server非常方便</li>
+<li>高可靠性：容错和数据恢复</li>
+<li>生态环境：与Hadoop生态紧密结合</li>
+</ul>
+</li>
+<li>劣势<ul>
+<li>不够平滑，写放大和读放大</li>
+<li>数据恢复比较慢</li>
+</ul>
+</li>
+</ol>
+<h3 id="使用心得"><a href="#使用心得" class="headerlink" title="使用心得"></a>使用心得</h3><h4 id="HBase存储格式"><a href="#HBase存储格式" class="headerlink" title="HBase存储格式"></a>HBase存储格式</h4><ul>
+<li>定长的部分：Key Length + Value Length + Row Length + CF Length + Timestamp + Key Value = ( 4 + 4 + 2 + 1 + 8 + 1) = <font color="red">20 Bytes</font></li>
+<li>变长的部分：Row + Column Family + Column Qualifier + Value</li>
+<li>可以优化的部分：Row + Column Family + Column Qualifier</li>
+</ul>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg" width="750" height="200" alt="HBase Key Value存储" style="clear: both; display: block; margin:auto; "></p>
+<h4 id="Row-Key的设计"><a href="#Row-Key的设计" class="headerlink" title="Row Key的设计"></a>Row Key的设计</h4><ul>
+<li>长度原则：越短越好，会影响HFile的存储效率，缓存的利用率</li>
+<li>散列原则：避免出现Region Server热点</li>
+<li>唯一原则：使用hash的话，需要考虑可能的冲突问题</li>
+</ul>
+<h4 id="命令行操作"><a href="#命令行操作" class="headerlink" title="命令行操作"></a>命令行操作</h4><ul>
+<li>deleteall命令无法删除带有将来时间戳的Cell</li>
+</ul>
+<p>参考资料：</p>
+<ul>
+<li><a href="https://www.mapr.com/blog/in-depth-look-hbase-architecture" target="_blank" rel="external">https://www.mapr.com/blog/in-depth-look-hbase-architecture</a> </li>
+<li><a href="http://prafull-blog.blogspot.jp/2012/06/how-to-calculate-record-size-of-hbase.html" target="_blank" rel="external">http://prafull-blog.blogspot.jp/2012/06/how-to-calculate-record-size-of-hbase.html</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/HBase/" rel="tag"># HBase</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/15/Java最佳实践/" rel="next" title="Java最佳实践">
+                <i class="fa fa-chevron-left"></i> Java最佳实践
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/10/Spark任务提交之Deploy/" rel="prev" title="Spark任务提交之Deploy">
+                Spark任务提交之Deploy <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2017/04/05/HBase架构/"
+           data-title="HBase架构" data-url="http://yoursite.com/2017/04/05/HBase架构/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="zjiash" />
+          <p class="site-author-name" itemprop="name">zjiash</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/zjiash" target="_blank" title="github">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  github
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概念和组件"><span class="nav-number">1.</span> <span class="nav-text">概念和组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读写过程"><span class="nav-number">2.</span> <span class="nav-text">读写过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#失败恢复"><span class="nav-number">3.</span> <span class="nav-text">失败恢复</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优缺点"><span class="nav-number">4.</span> <span class="nav-text">优缺点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用心得"><span class="nav-number">5.</span> <span class="nav-text">使用心得</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#HBase存储格式"><span class="nav-number">5.1.</span> <span class="nav-text">HBase存储格式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Row-Key的设计"><span class="nav-number">5.2.</span> <span class="nav-text">Row Key的设计</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#命令行操作"><span class="nav-number">5.3.</span> <span class="nav-text">命令行操作</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zjiash</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问人数
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"zjiash"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>
