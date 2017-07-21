@@ -273,6 +273,527 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/27/《深入理解Java虚拟机》之类加载机制/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/02/27/《深入理解Java虚拟机》之类加载机制/" itemprop="url">
+                  《深入理解Java虚拟机》之类加载机制
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-02-27T14:46:02+08:00">
+                2017-02-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/02/27/《深入理解Java虚拟机》之类加载机制/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/02/27/《深入理解Java虚拟机》之类加载机制/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><ol>
+<li>定义<ul>
+<li>虚拟机把描述类的数据从Class文件加载到内存，并对数据进行校验、转换解析和初始化，最终形成可以被虚拟机直接使用的Java类型，称为虚拟机的类加载机制</li>
+</ul>
+</li>
+<li>与其他语言的区别<ul>
+<li>编译型语言编译时就进行连接工作</li>
+<li>Java语言加载、连接和初始化是在运行期完成的，可以支持动态加载和动态连接</li>
+</ul>
+</li>
+</ol>
+<h3 id="类加载的时机"><a href="#类加载的时机" class="headerlink" title="类加载的时机"></a>类加载的时机</h3><ol>
+<li>类加载的阶段<ul>
+<li>加载、连接（包括验证、准备和解析）、初始化</li>
+<li>按部就班的顺序，开始是按顺序的，执行可以互相交叉混合</li>
+<li><font color="red">注意：加载阶段和类加载的区别（前者是后者的一个阶段）</font></li>
+</ul>
+</li>
+<li>何时开始？<ul>
+<li>何时开始加载，虚拟机并没有强制约束</li>
+<li>不过对于初始化阶段，规范规定了有且只有下面5种情况必须立即对类进行初始化，遇到下面5种情况，如果类没有进行初始化，需要先触发其初始化<ul>
+<li>遇到new、getstatic、putstatic或invokestatic这4条字节码指令时</li>
+<li>使用java.lang.reflect包的方法对类进行反射调用时</li>
+<li>当初始化一个类的时候，发现其父类还没有进行过初始化，需要先初始化父类</li>
+<li>当虚拟机启动时，用户需要指定一个要执行的主类，虚拟机需要先初始化主类</li>
+<li>当使用JDK 1.7的动态语言支持时，如果一个java.lang.invoke.MethodHandle实例最后的解析结果是REF_getStatic、REF_putStatic、REF_invokeStatic的方法句柄，并且这个方法句柄对应的类没有进行初始化</li>
+</ul>
+</li>
+<li><font color="red">注意：限定语是“有且只有”</font>，这5种行为称为对一个类的主动引用，其他所有引用类的方式都不允许触发初始化，称为被动引用</li>
+<li>被动引用实例一：通过子类引用父类的静态字段，不会导致子类初始化<ul>
+<li>对于静态字段，只有直接定义这个字段的类才会被初始化，因此，通过子类来引用父类中定义的静态字段，只会触发父类的初始化而不会触发子类的初始化。至于是否触发子类的加载和验证阶段，虚拟机规范并未明确规定</li>
+</ul>
+</li>
+<li>被动引用实例二：通过数组定义来引用类，不会触发此类的初始化<ul>
+<li>数组定义不会触发其元素类的初始化过程，虚拟机会封装一个类初始化，数组中应有的属性和方法都实现在这个类</li>
+</ul>
+</li>
+<li>被动引用实例三：常量引用不会触发定义常量的类的初始化<ul>
+<li>常量在编译阶段会存入调用类的常量池中（编译阶段采用的常量传播优化），本质上并没有直接引用到定义常量的类</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>接口也有初始化过程，与类的区别：<ul>
+<li>接口中不能使用<code>static{}</code>语句块，但依然会生成类构造器<code>&lt;clinit&gt;()</code>，用于初始化接口定义的成员变量</li>
+<li>接口变量会自动使用public static final关键字来修饰，方法会使用public关键字来修饰</li>
+<li>接口初始化时，并不要求其父接口全部都完成初始化，只有在真正使用父接口的时候（引用接口中定义的常量）才会初始化</li>
+<li>接口中常量和类中不一致？</li>
+</ul>
+</li>
+</ol>
+<h3 id="类加载的过程"><a href="#类加载的过程" class="headerlink" title="类加载的过程"></a>类加载的过程</h3><ol>
+<li>加载<ul>
+<li>加载阶段要完成的3件事：<ul>
+<li>通过类的全限定名来获取定义该类的二进制字节流</li>
+<li>将该字节流所代表的静态存储结构转化为方法区的运行时数据结构</li>
+<li>在内存中生成一个代表这个类的java.lang.Class对象，作为方法区这个类的各种数据的访问入口</li>
+</ul>
+</li>
+<li>可以从各种渠道获取二进制字节流，比如文件、网络、数据库、运行时计算等，这个阶段是开发人员可控性最强的，系统会提供引导类加载器，用户也可以自定义</li>
+<li>对于数组，情况有所不同，数组类本身不通过加载器创建，它由JVM直接创建</li>
+<li>方法区中的数据结构规范并未规定，由虚拟机实现自行定义</li>
+</ul>
+</li>
+<li>验证<ul>
+<li>验证字节流中的信息符合当前虚拟机的要求</li>
+<li>安全性考虑：字节流的来源太多了，编译器并不能挡掉所有威胁</li>
+<li>加载未完成时，验证即可开始，但是开始时间还是有序的</li>
+<li>4个阶段的验证动作<ul>
+<li>文件格式验证：是否符合Class文件格式？比如魔数、版本号、常量类型、常量索引等</li>
+<li>元数据验证：语义是否符合Java语言规范？比如是否有父类，是否继承了不被允许继承的类</li>
+<li>字节码验证：数据流和控制流分析，比如操作码和操作数个数类型是否匹配，跳转地址是否合法，类型转换是否合法（通过StackMapTable检查）</li>
+<li>符合引用验证：在连接的第三个阶段解析中发生，符号引用是否合法</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>准备<ul>
+<li>为类变量分配内存并设置类变量初始值，只包括类变量，内存在方法区分配</li>
+<li>这里的初始值通常是数据类型的零值，真正的赋值在类构造器中发生（初始化），如果是常量，初始值就是真实值</li>
+</ul>
+</li>
+<li>解析<ul>
+<li>将常量池内的符号引用替换为直接引用的过程</li>
+<li>符号引用：字面量描述的引用目标，无歧义定位，引用的目标不一定已经加载到内存，不同虚拟机符号引用必须一致，Class文件格式中有规定</li>
+<li>直接引用：可以是直接指向目标的指针、相对偏移量或间接定位目标的句柄，不同虚拟机直接引用一般不会相同</li>
+<li>16个字节码指令要求先解析，除了invokedynamic外，虚拟机可以缓存第一次的解析结果</li>
+</ul>
+</li>
+<li>初始化<ul>
+<li>真正开始执行类中定义的Java程序代码</li>
+<li>类构造器<code>&lt;clinit&gt;()</code><ul>
+<li>编译器自动收集类中所有类变量的赋值动作和静态语句块中的语句合并生成，按顺序</li>
+<li>不需要显示调用父类构造器，虚拟机自己保证</li>
+<li>父类定义的静态语句块要优先于子类的变量赋值操作</li>
+<li>类构造器并非必须，如果没有类变量和语句块，可以不生成构造器</li>
+<li>接口没有语句块，执行接口的<code>&lt;clinit&gt;()</code>不需要先执行父接口的<code>&lt;clinit&gt;()</code>方法</li>
+<li>虚拟机会保证类构造器方法只执行一次，其他线程需要等待</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h3><ol>
+<li>实现通过一个全限定名来获取描述此类的二进制字节流动作的代码模块称为“类加载器”</li>
+<li>类相等需要加载他们的加载器是同一个加载器</li>
+<li>双亲委派模型<ul>
+<li>除了启动类加载器，其他加载器都有自己的父类加载器（通过组合而非继承实现）</li>
+<li>工作过程：收到加载请求，会先交给自己的父类加载器，只有父类反馈找不到的时候，才自己加载</li>
+<li>好处：同一个类肯定会被同一个加载器加载，不会出现不相等的情况</li>
+</ul>
+</li>
+<li>破坏双亲委派模型<ul>
+<li>并非强制约束，而是Java设计者推荐给开发者的类加载器实现方式</li>
+<li>第一次：提出时与原有实现不兼容，不提倡复写<code>loadClass()</code>方法，而是增加<code>findClass()</code>方法实现自己的加载逻辑</li>
+<li>第二次：基础类调用用户代码，比如启动类加载器加载的类需要对资源进行集中管理，需要引入线程上下文类加载器</li>
+<li>第三次：追求程序动态性，比如代码热替换</li>
+</ul>
+</li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/20/《深入理解Java虚拟机》之类文件结构/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/02/20/《深入理解Java虚拟机》之类文件结构/" itemprop="url">
+                  《深入理解Java虚拟机》之类文件结构
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-02-20T11:32:39+08:00">
+                2017-02-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/02/20/《深入理解Java虚拟机》之类文件结构/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/02/20/《深入理解Java虚拟机》之类文件结构/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="类文件结构"><a href="#类文件结构" class="headerlink" title="类文件结构"></a>类文件结构</h2><h3 id="无关性基石"><a href="#无关性基石" class="headerlink" title="无关性基石"></a>无关性基石</h3><ol>
+<li>平台无关性<ul>
+<li>在应用层面上，由虚拟机提供商发布可运行在各种不同平台上的虚拟机</li>
+<li>所有平台都统一使用相同的程序存储格式</li>
+</ul>
+</li>
+<li>语言无关性<ul>
+<li>任一功能性语言都可以表示为一个能被Java虚拟机所接受的有效的Class文件</li>
+<li>虚拟机不和包括Java在内的任何语言绑定，只和“Class文件”这种特定的二进制文件格式关联</li>
+<li>Class文件包含了虚拟机指令集和符号表以及若干其他辅助信息</li>
+<li>Clojure、JRuby、Groovy、Scala等通过各种的编译器都能产生Class文件</li>
+</ul>
+</li>
+</ol>
+<h3 id="Class类文件结构"><a href="#Class类文件结构" class="headerlink" title="Class类文件结构"></a>Class类文件结构</h3><ol>
+<li>任何一个Class文件都对应唯一一个类或接口的定义，反过来不一定成立，并非一定要以文件形式存在，单需要满足文件格式</li>
+<li>Class文件是一组以8位字节为基础单位的二进制流，各数据项严格按照顺序紧密排列，中间没有任何分隔符，如需要存储超过8位字节的数据项，会分成多个8位字节进行存储</li>
+<li>Class文件采用伪结构体来存储数据，只有无符号数和表两种数据类型<ul>
+<li>无符号数属于基本数据类型，包括u1、u2、u4、u8，分别表示1、2、4、8个字节的无符号数，用来描述数字、索引引用、数量值或者UTF8编码的字符串值</li>
+<li>表是由多个无符号数或者其他表构成的复合数据类型</li>
+<li>当同一类型但数量不定的多个数据连续出现时，使用前置容器计数来表示这一集合</li>
+</ul>
+</li>
+<li>具体数据格式（按顺序）<ul>
+<li>魔数和版本号<ul>
+<li>确定文件是否能被虚拟机接受</li>
+</ul>
+</li>
+<li>常量池<ul>
+<li>Class文件中的资源仓库，第一个表类型数据项目</li>
+<li>索引从1开始，下标0用于特殊用途</li>
+<li>存储两大类常量：字面量和符合引用</li>
+<li>符号引用包括：类和接口的全限定名、字段的名称和描述符、方法的名称和描述符</li>
+<li>和C/C++不同，Java编译不包括连接，虚拟机加载Class文件时动态连接，因此Class文件不需要保持最终的内存布局信息</li>
+<li>常量池中每一项都是一个表，常量可以指向另一个常量</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>访问标志<ul>
+<li>类文件表示类还是接口、是否public、是否abstract等</li>
+</ul>
+</li>
+<li>类索引和父类索引<ul>
+<li>各一个u2类型数据，指向常量池中的CONSTANT_Class_info类描述符常量</li>
+</ul>
+</li>
+<li>接口索引集合<ul>
+<li>集合类型，如果长度为0，后面的索引表不占用任何字节</li>
+</ul>
+</li>
+<li>字段表集合<ul>
+<li>字段access_flags：类变量还是示例标量、作用域、可变性等</li>
+<li>简单名称：比如<code>m</code></li>
+<li>描述符：描述字段的数据类型，比如<code>java.lang.String[][]</code>记录为<code>[[Ljava/lang/String</code></li>
+<li>属性集合：比如常量字段会带有ConstantValue属性</li>
+</ul>
+</li>
+<li>方法表集合<ul>
+<li>结构和字段类似</li>
+<li>描述符：<code>Void inc()</code>描述符为<code>()V</code>，<code>java.lang.String toString()</code>描述符为<code>()Ljava.lang.String</code></li>
+<li>属性：Code属性</li>
+<li>可能出现编译器自动添加的方法，比如类构造器<code>&lt;clinit&gt;</code>和实例构造器<code>&lt;init&gt;</code></li>
+<li><font color="red">语言层面Java不允许仅仅依靠返回值不同来Overload一个已有方法，但是如果两个方法有相同的签名（只包括方法名称、参数顺序和类型），只是返回值不同，可以合法共存于同一个Class文件</font></li>
+<li>方法的重写(Override)和重载(Overload)是Java多态性的不同表现，Override是父类与子类之间多态性的一种表现，而Overload是一个类中多态性的一种表现</li>
+</ul>
+</li>
+<li>属性表集合<ul>
+<li>包括：Code属性、Exception属性、LineNumberTable属性、LocalVariableTable属性、ConstantValue属性等，字段表里面静态变量可以带上ConstantValue属性</li>
+<li>Code属性包括异常处理代码，1.4.2之后，finally语句通过冗余来实现，每个分支后面都跟一个</li>
+<li>Exception属性记录可能抛出的异常，方法描述时throws后面列举的异常</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="字节码指令"><a href="#字节码指令" class="headerlink" title="字节码指令"></a>字节码指令</h3><h4 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h4><ol>
+<li>Java虚拟机的指令由一个字节长度、代表着某种特定操作含义的数字（操作码Opcode）以及跟随其后的零到多个代表此操作所需参数（操作数Operands）而构成</li>
+<li>Java虚拟机采用面向操作数栈而不是寄存器的架构，所以大多数的指令都不包含操作数，只有一个操作码</li>
+</ol>
+<h4 id="字节码"><a href="#字节码" class="headerlink" title="字节码"></a>字节码</h4><ol>
+<li>字节码和数据类型<ul>
+<li>指令包含操作数所对应的类型，比如iload和fload分别表示加载int和float的数据到操作数栈中，尽管可能是同一段代码，但是Class文件中必须拥有各自独立的操作码</li>
+<li>然而，并非每种类型都需要特殊的配套指令（操作码只有一个字节），必要时需要进行类型转换，比如没有byteLoad指令，编译器在编译或运行期会转换成iload来实现</li>
+</ul>
+</li>
+<li>指令分类<ul>
+<li>加载和存储指令：iload、istore</li>
+<li>运算指令：iadd、isub、iand</li>
+<li>类型转换指令：i2f</li>
+<li>对象创建和访问指令：new、getfield、getstatic、arraylength</li>
+<li>操作数栈管理指令：pop、dup、swap</li>
+<li>控制转移指令：ifeq、tableswitch、goto、ret</li>
+<li>方法调用和返回指令：invokeinterface、invoke*、ireturn</li>
+<li>异常处理指令：athrow</li>
+<li>同步指令：monitorenter、monitorexit</li>
+</ul>
+</li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/09/《深入理解Java虚拟机》之内存管理/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1960,163 +2481,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/03/29/Hello-World/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2016/03/29/Hello-World/" itemprop="url">
-                  Hello World
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-03-29T16:13:50+08:00">
-                2016-03-29
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/随笔/" itemprop="url" rel="index">
-                    <span itemprop="name">随笔</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2016/03/29/Hello-World/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/03/29/Hello-World/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>这是一个测试文档</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;hello world!&quot;</span><br></pre></td></tr></table></figure>
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -2161,7 +2530,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-count">21</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -2183,7 +2552,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-count">13</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
