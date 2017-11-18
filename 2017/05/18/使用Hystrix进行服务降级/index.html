@@ -103,7 +103,7 @@
 服务隔离：同时提供服务A和B，如果A服务出现阻塞，B服务不能受到影响
 服务降级：A服务一段时间内持续阻塞，需要能提供替代的降级服务AA，同时应能尽快感知A是否可恢复">
 <meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/hystrix/command_flow_chart.png">
-<meta property="og:updated_time" content="2017-05-19T03:43:12.000Z">
+<meta property="og:updated_time" content="2017-11-18T08:15:17.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用Hystrix进行服务降级">
 <meta name="twitter:description" content="在大中型分布式系统中，通常依赖很多外部资源和服务，这些外部资源和服务的可用性和稳定性往往不是自己所能控制的，比如网络缓慢、资源繁忙、甚至服务暂时不可用等。当依赖阻塞时，大多数服务器的线程池会出现阻塞，影响整个线上服务的稳定性。
@@ -404,7 +404,7 @@
 <li>提供超时和fallback机制，如果提供了fallback方法，失败（异常、短路、超时）时直接返回fallback结果 </li>
 </ol>
 <h4 id="运行流程"><a href="#运行流程" class="headerlink" title="运行流程"></a>运行流程</h4><ol>
-<li>将依赖封装到HystrixCommand中，执行Command，execute()和queue()分布做同步或异步调用</li>
+<li>将依赖封装到HystrixCommand中，执行Command，execute()和queue()分别做同步或异步调用</li>
 <li>判断结果是否缓存，如有直接返回缓存结果</li>
 <li>判断熔断器是否打开（处于熔断状态），如果打开跳到步骤8，进行降级策略，否则继续后续步骤</li>
 <li>判断线程池/队列/信号量是否已经用满，如果用满进入降级步骤8，否则继续后续步骤</li>
@@ -562,7 +562,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-count">22</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>

@@ -273,6 +273,244 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/02/《深入理解Java虚拟机》之执行引擎/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/03/02/《深入理解Java虚拟机》之执行引擎/" itemprop="url">
+                  《深入理解Java虚拟机》之执行引擎
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-02T15:13:16+08:00">
+                2017-03-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/03/02/《深入理解Java虚拟机》之执行引擎/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/03/02/《深入理解Java虚拟机》之执行引擎/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="虚拟机和物理机"><a href="#虚拟机和物理机" class="headerlink" title="虚拟机和物理机"></a>虚拟机和物理机</h3><ol>
+<li>二者都具有代码执行能力</li>
+<li>物理机的执行引擎直接建立在处理器、硬件、指令集和操作系统之上</li>
+<li>虚拟机的执行引擎可以自己实现，自己定义指令集和引擎架构，支持不被硬件直接支持的指令格式</li>
+</ol>
+<h3 id="运行时栈帧结构"><a href="#运行时栈帧结构" class="headerlink" title="运行时栈帧结构"></a>运行时栈帧结构</h3><ol>
+<li>每一个栈帧都包含了局部变量表、操作数栈、动态连接、方法返回地址和一些额外的附加消息</li>
+<li>编译时，栈帧需要的局部变量表大小、操作数栈深度都已完全确定（方法表的Code属性记录）</li>
+<li>方法链中位于栈顶的栈帧才有效，称为当前栈帧，执行引擎运行的所有指令都只针对当前栈帧</li>
+<li>局部变量表<ul>
+<li>用于存储方法参数和方法内定义的变量</li>
+<li>容量以变量槽Slot为最小单位，容量写在Code属性的max_locals数据项中</li>
+<li>Slot的大小不定，每个Slot需要能存储包括int、float、reference等类型的数据</li>
+<li>虚拟机通过索引定位的方式使用局部变量表</li>
+<li>局部变量的Slot可以重用，会有额外副作用，在某些情况下，会导致GC暂时无法回收空间</li>
+</ul>
+</li>
+<li>操作数栈<ul>
+<li>后入先出数据结构，最大深度写在Code属性的max_stacks数据项中</li>
+<li>通过入栈（push常数和load局部变量）来为字节码指令准备操作数，操作数数据类型必须和字节码指令的序列严格匹配，操作完之后的变量赋值再通过store指令完成</li>
+<li>Java虚拟机的解释执行引擎称为基于栈的执行引擎，这里的栈就是操作数栈</li>
+</ul>
+</li>
+<li>动态链接<ul>
+<li>每个栈帧都包含一个指向运行时常量池中该栈帧所属方法的引用</li>
+<li>Class文件的常量池中存在大量的符合引用，字节码中的方法调用指令就以常量池中指向方法的符合引用作为参数</li>
+<li>静态解析和动态连接</li>
+</ul>
+</li>
+<li>方法返回地址</li>
+<li>附加信息：完全取决于具体的虚拟机实现</li>
+</ol>
+<h3 id="方法调用"><a href="#方法调用" class="headerlink" title="方法调用"></a>方法调用</h3><ol>
+<li>方法调用并不等同于方法执行，方法调用阶段的唯一任务是确定被调用的是哪一个方法</li>
+<li>五种方法调用字节码指令<ul>
+<li>invokestatic：调用静态方法</li>
+<li>invokespecial：调用实例构造器方法、私有方法和父类方法</li>
+<li>invokevirtual：调用所有的虚方法</li>
+<li>invokeinterface：调用接口方法，运行时再确定具体对象</li>
+<li>invokedynamic：动态解析调用点限定符所引用的方法</li>
+<li>前4条调用指令，分派逻辑固化在JVM内部，而invokedynamic的分派逻辑由用户所设定的引导方法决定</li>
+</ul>
+</li>
+<li>解析（Resolution）：编译阶段就确定下来调用目标的方法调用称为解析<ul>
+<li>编译期可知，运行期不可变，主要包括静态方法和私有方法（均不可能重写其他版本）</li>
+<li>invokestatic和invokespecial指令调用的方法，类加载的解析阶段即可进行</li>
+<li>final方法使用invokevirtual指令来调用，也是解析阶段将符号引用解析为直接引用</li>
+<li>静态解析的方法称为非虚方法，其他称为虚方法</li>
+</ul>
+</li>
+<li><p>分派（Dispatch）</p>
+<ul>
+<li>解析是静态的，不会延迟到运行期完成；分配可以是静态，也可以是动态</li>
+<li><p>静态分派：依赖方法的静态类型定位执行版本</p>
+<ul>
+<li>重载（Overload）的方法通过参数的静态类型判断，使用invokevirtual，编译期间决定</li>
+<li>字面量没有静态类型，编译器会选择“更加合适的”版本</li>
+<li>解析和分配并不是二选一的排他关系，他们是在不同层次上去筛选、确定目标方法的过程，静态方法会在类加载期就进行解析，静态方法的重载版本选择通过静态分派</li>
+</ul>
+<pre class="codehilite">
+  Human man = new Man();
+  man = new Woman();  // 实际类型变化
+  // 静态类型变化
+  sr.sayHello((Man) man);
+  sr.sayHello((Woman) man);
+  // Human称为变量的静态类型或外观类型，Man称为变量的实际类型
+  // 区别：静态类型的变化仅仅在使用时发生，编译期可知；实际类型运行时才可确定
+</pre>
+</li>
+<li><p>动态分派：重写（Override）相关</p>
+<ul>
+<li>重写（Override）方法的调用指令都是一样的，但执行的目标方法并不同，依赖invokevirtual指令的多态查找过程（根据操作数栈里面的对象来找，重载应该也是）</li>
+</ul>
+</li>
+<li>单分派和多分派<ul>
+<li>方法的接受者和方法参数称为方法的宗量，基于宗量的数量可分为单分派和多分派</li>
+<li>静态分配属于多分派，同时考虑接受者和参数的静态类型</li>
+<li>动态分派属于单分派，只考虑接收者    </li>
+</ul>
+</li>
+<li>今天的Java语言还是一门静态多分派、动态单分派的语言</li>
+<li>动态分派的实现：虚方法表，子类会承袭父类的方法，直接查表即可得</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 分派示例</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Dispatch</span> </span>&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">QQ</span> </span>&#123;&#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">_360</span> </span>&#123;&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Father</span> </span>&#123;</span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hardChoice</span><span class="params">(QQ args)</span> </span>&#123;</span><br><span class="line">			System.out.println(<span class="string">"father choose qq"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hardChoice</span><span class="params">(_360 args)</span> </span>&#123;</span><br><span class="line">			System.out.println(<span class="string">"father choose 360"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Son</span> <span class="keyword">extends</span> <span class="title">Father</span> </span>&#123;</span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hardChoice</span><span class="params">(QQ args)</span> </span>&#123;</span><br><span class="line">			System.out.println(<span class="string">"son choose qq"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hardChoice</span><span class="params">(_360 args)</span> </span>&#123;</span><br><span class="line">			System.out.println(<span class="string">"son choose 360"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Father father = <span class="keyword">new</span> Father();</span><br><span class="line">		Father son = <span class="keyword">new</span> Son();</span><br><span class="line">		father.hardChoice(<span class="keyword">new</span> _360());</span><br><span class="line">		son.hardChoice(<span class="keyword">new</span> QQ());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 输出为：</span></span><br><span class="line">father choose <span class="number">360</span></span><br><span class="line">son choose qq</span><br></pre></td></tr></table></figure>
+<h3 id="动态类型语言支持"><a href="#动态类型语言支持" class="headerlink" title="动态类型语言支持"></a>动态类型语言支持</h3><p>不同类型直接的动态绑定，只要我实现了该方法即可，感觉相当于自己写switch分派，只是它提供了一致机制</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/27/《深入理解Java虚拟机》之类加载机制/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2307,180 +2545,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/03/31/Play-Framework的异步机制/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2016/03/31/Play-Framework的异步机制/" itemprop="url">
-                  Play Framework的异步机制
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-03-31T16:31:15+08:00">
-                2016-03-31
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/技术/" itemprop="url" rel="index">
-                    <span itemprop="name">技术</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2016/03/31/Play-Framework的异步机制/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/03/31/Play-Framework的异步机制/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>最近看Play的文档，其中有如下描述：</p>
-<blockquote>
-<p>Internally, <a href="https://www.playframework.com/documentation/2.4.x/ScalaAsync" target="_blank" rel="external">Play Framework</a> is asynchronous from the bottom up. Play handles every request in an asynchronous, non-blocking way.<br>The default configuration is tuned for asynchronous controllers. In other words, the application code should avoid blocking in controllers, i.e., having the controller code wait for an operation. Common examples of such blocking operations are JDBC calls, streaming API, HTTP requests and long computations.</p>
-</blockquote>
-<p>然后介绍了如何构建异步的Actions，最后又说:</p>
-<blockquote>
-<p>Play actions are asynchronous by default.</p>
-</blockquote>
-<p>我有点纳闷：既然本身就是异步的，为什么还让我们自己构建异步的Actions，最后居然说本来就是异步的，岂不是说了半天废话？</p>
-<p>后来经过多次google发现，框架是异步的仅仅表示用来处理requests的线程不会block，实际上<code>Action.apply</code>和<code>Action.async</code>除了签名，本质上没有区别，后者返回的是一个<code>Future</code>，前者会将<code>block: =&gt; Result</code>通过<code>Future.successful(block)</code>转换成<code>Future[Result]</code>，这样处理requests的线程就不会block了。</p>
-<p>但是，没有什么魔法能够简单的将block操作变成non-block操作。<code>Future</code>也需要地方执行，不可能凭空就跑出结果来。实际上，<code>Future</code>的执行需要环境，也就是线程池，你可以使用scala自带的<code>ExecutionContext</code>，也可以自己实现。下面的代码清楚的说明了这一点：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">scala&gt; import scala.concurrent.Future</span><br><span class="line">import scala.concurrent.Future</span><br><span class="line"></span><br><span class="line">scala&gt; import scala.concurrent.ExecutionContext.Implicits.global</span><br><span class="line">import scala.concurrent.ExecutionContext.Implicits.global</span><br><span class="line"></span><br><span class="line">scala&gt; Thread.currentThread.getId()</span><br><span class="line">res0: Long = 1</span><br><span class="line"></span><br><span class="line">scala&gt; (1 to 5).map(x =&gt; Future &#123; Thread.currentThread.getId() &#125;).map(_.value.get) foreach println</span><br><span class="line">Success(12)</span><br><span class="line">Success(14)</span><br><span class="line">Success(13)</span><br><span class="line">Success(13)</span><br><span class="line">Success(13)</span><br></pre></td></tr></table></figure></p>
-<p><font color="red"><code>Future</code>会被扔到线程池里面去继续执行，如果执行的过程中有block的操作，该线程还是会被block住，只是它不会block遇到<code>Future</code>的线程而已。</font>这也是Play声称自己是异步框架的原因，requests会被很快的处理，压力被放到了其他的线程池上。下面的话也说明了这一点，进件包上一层<code>Future</code>并不能解决所有的问题，你还是需要自己去处理应用中出现的block问题。Play有自己默认的线程池，你也可以根据应用需求，为不同的<code>Future</code>分配不同的<code>ExecutionContext</code>。如果采用第三方库，需要库本身提供的API就是异步的（第三方库自带线程池实现）。</p>
-<blockquote>
-<p>Because of this, if you plan to write blocking IO code, or code that could potentially do a lot of CPU intensive work, you need to know exactly which thread pool is bearing that workload, and you need to tune it accordingly.</p>
-</blockquote>
-<p>至此，基本上明白了Play声称的异步框架的含义。</p>
-<p>参考文献：</p>
-<ul>
-<li><a href="https://www.playframework.com/documentation/2.4.x/ScalaAsync" target="_blank" rel="external">https://www.playframework.com/documentation/2.4.x/ScalaAsync</a></li>
-<li><a href="https://www.playframework.com/documentation/2.4.x/ThreadPools" target="_blank" rel="external">https://www.playframework.com/documentation/2.4.x/ThreadPools</a></li>
-<li><a href="http://stackoverflow.com/a/23648137/4066546" target="_blank" rel="external">http://stackoverflow.com/a/23648137/4066546</a></li>
-<li><a href="http://stackoverflow.com/a/24004444/4066546" target="_blank" rel="external">http://stackoverflow.com/a/24004444/4066546</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2530,7 +2594,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-count">22</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>

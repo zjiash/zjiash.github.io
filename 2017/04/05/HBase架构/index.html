@@ -92,45 +92,45 @@
 
 <meta name="description" content="概念和组件
 Region
-按行划分，负载均衡的最小单元
-按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同
+按行划分，负载均衡的最小单元，用户数据表由一个或多个Region组成
+在Region中每个ColumnFamily的数据组成一个Store
+每个Store由一个Memstore和多个HFile组成
 
 
 Region Servers
 维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region
 组件：
-BlockCache：读缓存，LRU缓存，每个Region Server一个
-WAL：日">
+BlockCa">
 <meta property="og:type" content="article">
 <meta property="og:title" content="HBase架构">
 <meta property="og:url" content="http://yoursite.com/2017/04/05/HBase架构/index.html">
 <meta property="og:site_name" content="zjiash的博客">
 <meta property="og:description" content="概念和组件
 Region
-按行划分，负载均衡的最小单元
-按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同
+按行划分，负载均衡的最小单元，用户数据表由一个或多个Region组成
+在Region中每个ColumnFamily的数据组成一个Store
+每个Store由一个Memstore和多个HFile组成
 
 
 Region Servers
 维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region
 组件：
-BlockCache：读缓存，LRU缓存，每个Region Server一个
-WAL：日">
+BlockCa">
 <meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg">
-<meta property="og:updated_time" content="2017-04-26T08:01:33.000Z">
+<meta property="og:updated_time" content="2017-08-02T08:06:42.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="HBase架构">
 <meta name="twitter:description" content="概念和组件
 Region
-按行划分，负载均衡的最小单元
-按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同
+按行划分，负载均衡的最小单元，用户数据表由一个或多个Region组成
+在Region中每个ColumnFamily的数据组成一个Store
+每个Store由一个Memstore和多个HFile组成
 
 
 Region Servers
 维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region
 组件：
-BlockCache：读缓存，LRU缓存，每个Region Server一个
-WAL：日">
+BlockCa">
 <meta name="twitter:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg">
 
 
@@ -414,8 +414,9 @@ WAL：日">
       
         <h3 id="概念和组件"><a href="#概念和组件" class="headerlink" title="概念和组件"></a>概念和组件</h3><ol>
 <li>Region<ul>
-<li>按行划分，负载均衡的最小单元</li>
-<li>按Column Family分MemStore和HFile维护，不同CF的数据存储的文件不同</li>
+<li>按行划分，负载均衡的最小单元，用户数据表由一个或多个Region组成</li>
+<li>在Region中每个ColumnFamily的数据组成一个Store</li>
+<li>每个Store由一个Memstore和多个HFile组成</li>
 </ul>
 </li>
 <li>Region Servers<ul>
@@ -465,7 +466,12 @@ WAL：日">
 </ul>
 </li>
 <li>Compact<ul>
-<li>minor compact：自动将小的HFiles合并成大HFile</li>
+<li>minor compact<ul>
+<li>以Store为单位进行，自动将小的HFiles合并成大HFile</li>
+<li>不会处理已经Deleted或Expired的Cell</li>
+<li>触发条件：Memstore Flush、</li>
+</ul>
+</li>
 <li>major compact：将一个Region上的所有HFiles写成一个HFile，每个CF一个HFile；可配置为自动，会消耗大量IO和网络资源（写放大影响），并不需要经常运行</li>
 </ul>
 </li>
@@ -642,7 +648,7 @@ WAL：日">
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-count">22</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
