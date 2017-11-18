@@ -381,7 +381,45 @@
       
         
           
-            <p>上一篇<a href="/2017/05/18/使用Hystrix进行服务降级">使用Hystrix进行服务降级</a></p>
+            <p>上一篇<a href="/2017/05/18/使用Hystrix进行服务降级">使用Hystrix进行服务降级</a>简单介绍了Hystrix的运行流程，本篇就使用过程中遇到的一些问题进行深入探讨。</p>
+<h3 id="Command分组属性"><a href="#Command分组属性" class="headerlink" title="Command分组属性"></a>Command分组属性</h3><ol>
+<li>GroupKey<ul>
+<li>表示具有公共关系的一组命令</li>
+<li>不同的HystrixCommand可以具有相同的GroupKey</li>
+</ul>
+</li>
+<li>CommandKey<ul>
+<li>识别HystrixCommand实例，默认使用实例类名</li>
+<li>每个CommandKey都会生成单独的断路器和统计信息，不同的HystrixCommand最好使用不同的CommandKey</li>
+<li>CommandKey的数量建议不要太多，会占用较多内存</li>
+</ul>
+</li>
+<li>ThreadPoolKey<ul>
+<li>指定命令运行的线程池，默认使用GroupKey，而不是CommandKey</li>
+<li>单独指定可以允许同一个组的命令运行在不同的线程池中</li>
+</ul>
+</li>
+</ol>
+<h3 id="Fallback运行机制"><a href="#Fallback运行机制" class="headerlink" title="Fallback运行机制"></a>Fallback运行机制</h3><ol>
+<li>Fallback在哪儿执行?<ul>
+<li>并非如大家所想的在HystrixWorker线程中执行，而是分多种情况，按照前文的描述有4种不同的情况</li>
+<li>case 1：熔断器打开，初始化/调用线程执行Fallback</li>
+<li>case 2：线程池/队列/信号量已满，初始化/调用线程执行Fallback</li>
+<li>case 3：命令执行超时，HystrixTimer线程执行Fallback</li>
+<li>case 4：命令执行异常，HystrixWorker线程执行Fallback</li>
+</ul>
+</li>
+<li>Fallback是否一定会执行？<ul>
+<li>并不一定，第1、2和4种情况应该都会执行，但是第3种情况不一定，HystrixTimer线程是用来管理HystrixWorker线程的超时的，而且其数量和运行机器的核数一致，4核的机器上只会有4个Timer线程，如果Fallback逻辑复杂，把Timer线程占满了，此时HystrixWorker线程即使超时也会继续执行，这部分最终会抛出<code>HystrixRuntimeException: fallback execution rejected</code>，不过设置的超时时间可能就无法保证了</li>
+</ul>
+</li>
+<li>Fallback的使用要点<ul>
+<li>尽量保证Fallback不依赖任何外部资源，能够很快运行结束</li>
+<li>使用单独的HystrixCommand来封装Fallback逻辑</li>
+<li>使用Java 8 Supplier，类似延迟执行，将Fallback逻辑强制放到调用线程中执行</li>
+</ul>
+</li>
+</ol>
 
           
         
