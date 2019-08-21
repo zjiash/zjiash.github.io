@@ -1,0 +1,829 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="mysql,database," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="最近在看《高性能MySQL》一书，关于书中MySQL解决幻读的问题有一些疑问：在1.3.1小节介绍可重复读时描述：InnoDB通过多版本并发控制MVCC解决了幻读问题，并在1.4多版本并发控制小节中进一步说明了是如何解决的。然后，后文1.5.1中又说InnoDB通过间隙锁（next-key locking）策略防止幻读的出现。第一次读的时候感觉比较奇怪，通过多版本完全可以解决幻读的问题，读事务只会">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL隔离级别及实现">
+<meta property="og:url" content="http://yoursite.com/2018/03/19/MySQL隔离级别及实现/index.html">
+<meta property="og:site_name" content="zjiash的博客">
+<meta property="og:description" content="最近在看《高性能MySQL》一书，关于书中MySQL解决幻读的问题有一些疑问：在1.3.1小节介绍可重复读时描述：InnoDB通过多版本并发控制MVCC解决了幻读问题，并在1.4多版本并发控制小节中进一步说明了是如何解决的。然后，后文1.5.1中又说InnoDB通过间隙锁（next-key locking）策略防止幻读的出现。第一次读的时候感觉比较奇怪，通过多版本完全可以解决幻读的问题，读事务只会">
+<meta property="og:updated_time" content="2019-08-21T09:49:43.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL隔离级别及实现">
+<meta name="twitter:description" content="最近在看《高性能MySQL》一书，关于书中MySQL解决幻读的问题有一些疑问：在1.3.1小节介绍可重复读时描述：InnoDB通过多版本并发控制MVCC解决了幻读问题，并在1.4多版本并发控制小节中进一步说明了是如何解决的。然后，后文1.5.1中又说InnoDB通过间隙锁（next-key locking）策略防止幻读的出现。第一次读的时候感觉比较奇怪，通过多版本完全可以解决幻读的问题，读事务只会">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/19/MySQL隔离级别及实现/"/>
+
+
+
+
+
+  <title>MySQL隔离级别及实现 | zjiash的博客</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">zjiash的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/19/MySQL隔离级别及实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                MySQL隔离级别及实现
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-19T14:30:17+08:00">
+                2018-03-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/03/19/MySQL隔离级别及实现/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2018/03/19/MySQL隔离级别及实现/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近在看<a href="https://book.douban.com/subject/23008813/" target="_blank" rel="external">《高性能MySQL》</a>一书，关于书中MySQL解决幻读的问题有一些疑问：在1.3.1小节介绍可重复读时描述：InnoDB通过多版本并发控制MVCC解决了幻读问题，并在1.4多版本并发控制小节中进一步说明了是如何解决的。然后，后文1.5.1中又说InnoDB通过间隙锁（next-key locking）策略防止幻读的出现。第一次读的时候感觉比较奇怪，通过多版本完全可以解决幻读的问题，读事务只会看到自己之前的数据，其他事务是无法影响它的，为什么还需要间隙锁来防止幻读出现？在多番Google之后，终于明白了其中的玄机。</p>
+<h3 id="数据库隔离级别"><a href="#数据库隔离级别" class="headerlink" title="数据库隔离级别"></a>数据库隔离级别</h3><p>隔离级别用来限制事务之间的交互程度，用于解决ACID中的隔离性问题，目前业界一般有如下4种隔离级别：</p>
+<ol>
+<li>READ_UNCOMMITTED：未提交读，在该级别下，事务中的修改，即使没有提交，对其他事务也是可见的。该级别会产生所谓的脏读，导致很多问题；</li>
+<li>READ_COMMITTED：提交读，在该级别下，事务开始后，只能看见已提交的事务所做的修改，如果其他事务在该事务进行过程中提交，则该事务可以看见提交后的修改。该级别也叫不可重复读，因为前后两次同样的查询，可能会得到不一样的结果；</li>
+<li>REPEATABLE_READ：可重复读，该级别保证在同一个事务中，多次读取同样记录的结果是一致的。注意：这里的可重复读重点在于update和delete，而不在于insert。该级别无法解决“幻读”问题：范围查询可能会读到其他事务insert的幻行，这一点通过普通的行锁难以解决；</li>
+<li>SERIALIZABLE：可串行化，该级别通过强制事务串行化执行来保证隔离性，是最高的隔离级别；</li>
+</ol>
+<p>隔离级别依次增强，但是导致的问题是并发能力的减弱。MySQL的InnoDB引擎支持所有的隔离级别，默认的隔离级别是可重复读。需要注意：MySql的RR级别是解决了幻读的。</p>
+<h3 id="InnoDB引擎的解决方案"><a href="#InnoDB引擎的解决方案" class="headerlink" title="InnoDB引擎的解决方案"></a>InnoDB引擎的解决方案</h3><p>通过MVCC解决“快照读”的幻读问题，通过间隙锁解决“当前读”的幻读问题。具体思路如下：</p>
+<ol>
+<li>脏读的解决方案：可以通过读写互斥锁来解决，正在写的数据不允许读，等待释放。但是这样性能太低，对于MySql，如果读取的行正在执行update或delete操作，这时读操作不会等待行上锁的释放，而是读取行的一个快照数据；</li>
+<li>不可重复读的解决方案：RR下，事务在第一个Read操作时（而非事务开始时），会建立ReadView；RC下，事务在每次Read操作时，都会重新建立Read View。Read View可以解决其他事务的update和delete影响；</li>
+<li>幻读的解决方案：Read View也可以解决其他事务的insert对“快照读”的影响，但是无法解决“当前读”的问题。例子：比如常见的先读后写业务，事务T1先检查没有id=1的记录然后再插入id=1的记录，如果在期间T2已经插入了id=1的记录，且已经提交，则此时T1会出现“幻读”。这个光通过MVCC和行锁是无法解决的，MySql引人间隙键的方式；</li>
+</ol>
+<p>总结一下：</p>
+<ol>
+<li>对于MySql，不可重复读侧重表达读-读，幻读则是说读-写，用写来证实读的是鬼影；</li>
+<li>在RR下，MVCC可以这样理解：MV(Multi Version)用于解决脏读和不可重复读，而CC(Concurrency Control)则是利用Next-Key Lock解决幻读问题;</li>
+<li>RR为InnoDB的默认事务隔离级别，RR已经完全保证事务的隔离性要求，即达到SERIALIZABLE隔离级别；</li>
+</ol>
+<h3 id="多版本并发控制MVCC"><a href="#多版本并发控制MVCC" class="headerlink" title="多版本并发控制MVCC"></a>多版本并发控制MVCC</h3><p>MVCC原理：每行记录保存两个隐藏的列，一个记录该行的创建时间，一个记录该行的过期或删除时间。存储的并非实际的时间，而是系统或事务的版本号，该版本号随事务自动递增。MVCC只在读提交和可重复读这两个隔离级别下工作，与另外两个隔离级别不兼容。在可重复读隔离级别下，具体的操作如下：</p>
+<ol>
+<li>读操作：只查找创建版本小于等于当前事务版本 &amp;&amp; 删除版本大于当前事务版本或者为空的行</li>
+<li>插入操作：新增创建版本为当前事务版本的行</li>
+<li>删除操作：标记删除行的过期或删除版本</li>
+<li>更新操作：插入新行并删除旧行</li>
+</ol>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p><a href="https://tech.meituan.com/2014/08/20/innodb-lock.html" target="_blank" rel="external">https://tech.meituan.com/2014/08/20/innodb-lock.html</a><br><a href="https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/" target="_blank" rel="external">https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"># mysql</a>
+          
+            <a href="/tags/database/" rel="tag"># database</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/29/Kafka学习/" rel="next" title="Kafka学习">
+                <i class="fa fa-chevron-left"></i> Kafka学习
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/08/21/MySQL事务漫谈/" rel="prev" title="MySQL事务漫谈">
+                MySQL事务漫谈 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2018/03/19/MySQL隔离级别及实现/"
+           data-title="MySQL隔离级别及实现" data-url="http://yoursite.com/2018/03/19/MySQL隔离级别及实现/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="zjiash" />
+          <p class="site-author-name" itemprop="name">zjiash</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">26</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/zjiash" target="_blank" title="github">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  github
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据库隔离级别"><span class="nav-number">1.</span> <span class="nav-text">数据库隔离级别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#InnoDB引擎的解决方案"><span class="nav-number">2.</span> <span class="nav-text">InnoDB引擎的解决方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#多版本并发控制MVCC"><span class="nav-number">3.</span> <span class="nav-text">多版本并发控制MVCC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考文献"><span class="nav-number">4.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zjiash</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问人数
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"zjiash"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

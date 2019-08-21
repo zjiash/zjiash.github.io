@@ -117,7 +117,7 @@ Region Servers
 组件：
 BlockCa">
 <meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg">
-<meta property="og:updated_time" content="2017-08-02T08:06:42.000Z">
+<meta property="og:updated_time" content="2019-07-26T02:35:29.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="HBase架构">
 <meta name="twitter:description" content="概念和组件
@@ -449,7 +449,8 @@ BlockCa">
 <li>Meta Table<ul>
 <li>Key: table, start key, region id</li>
 <li>Values: RegionServer</li>
-<li>Client第一次读写需要从zk获取Meta表地址，也就是负责该表的Region Server</li>
+<li>Client第一次读写需要从zk获取Meta表地址，也就是负责该表的Region Servers</li>
+<li>然后使用Scan + Table和Row信息定位到相应的记录</li>
 </ul>
 </li>
 </ol>
@@ -469,7 +470,7 @@ BlockCa">
 <li>minor compact<ul>
 <li>以Store为单位进行，自动将小的HFiles合并成大HFile</li>
 <li>不会处理已经Deleted或Expired的Cell</li>
-<li>触发条件：Memstore Flush、</li>
+<li>触发条件：Memstore Flush</li>
 </ul>
 </li>
 <li>major compact：将一个Region上的所有HFiles写成一个HFile，每个CF一个HFile；可配置为自动，会消耗大量IO和网络资源（写放大影响），并不需要经常运行</li>
@@ -648,7 +649,7 @@ BlockCa">
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">22</span>
+                <span class="site-state-item-count">26</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -670,7 +671,7 @@ BlockCa">
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">16</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -745,7 +746,7 @@ BlockCa">
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

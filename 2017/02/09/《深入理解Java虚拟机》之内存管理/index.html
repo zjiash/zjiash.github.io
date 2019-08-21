@@ -137,7 +137,7 @@ Java堆和方法区需要回收，这部分内存的分配和回收都是动态�
 <meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/jvm/CMS%E6%94%B6%E9%9B%86%E5%99%A8%E8%BF%90%E8%A1%8C%E7%A4%BA%E6%84%8F%E5%9B%BE.png">
 <meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/jvm/G1%E5%A0%86%E7%A9%BA%E9%97%B4%E5%88%86%E9%85%8D.png">
 <meta property="og:image" content="http://o7b0ga5fo.bkt.clouddn.com/images/jvm/G1%E6%94%B6%E9%9B%86%E5%99%A8%E8%BF%90%E8%A1%8C%E7%A4%BA%E6%84%8F%E5%9B%BE.png">
-<meta property="og:updated_time" content="2017-03-02T09:35:56.000Z">
+<meta property="og:updated_time" content="2019-08-08T10:00:19.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="《深入理解Java虚拟机》之内存管理">
 <meta name="twitter:description" content="垃圾回收概述
@@ -510,7 +510,7 @@ Java堆和方法区需要回收，这部分内存的分配和回收都是动态�
 </ul>
 </li>
 <li>问题二：如何进入GC？<ul>
-<li>不可能为每条导致引用关系变化的指令都生成OopMap，也不需要每天指令都进入GC</li>
+<li>不可能为每条导致引用关系变化的指令都生成OopMap，也不需要每条指令都进入GC</li>
 <li>安全点：只有特点的位置才能停下来执行GC，按照“是否具有让程序长时间执行的特征”来选定，“长时间执行”最明显的特征是指令序列复用，例如方法调用、循环跳转、异常跳转等</li>
 <li>多线程的问题：需要所有线程都走到安全点，采用主动式中断，设置标志位，各线程执行时主动轮询，轮询标志的地方和安全点重合，轮询发现为真就自己中断</li>
 </ul>
@@ -761,7 +761,7 @@ Java堆和方法区需要回收，这部分内存的分配和回收都是动态�
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">22</span>
+                <span class="site-state-item-count">26</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -783,7 +783,7 @@ Java堆和方法区需要回收，这部分内存的分配和回收都是动态�
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">16</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -858,7 +858,7 @@ Java堆和方法区需要回收，这部分内存的分配和回收都是动态�
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

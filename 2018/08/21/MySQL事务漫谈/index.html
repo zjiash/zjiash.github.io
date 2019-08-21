@@ -1,0 +1,867 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="mysql,database," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="###事务的基本属性
+关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)
+关于A所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
+在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL事务漫谈">
+<meta property="og:url" content="http://yoursite.com/2018/08/21/MySQL事务漫谈/index.html">
+<meta property="og:site_name" content="zjiash的博客">
+<meta property="og:description" content="###事务的基本属性
+关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)
+关于A所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
+在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出">
+<meta property="og:updated_time" content="2019-08-21T09:58:00.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL事务漫谈">
+<meta name="twitter:description" content="###事务的基本属性
+关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)
+关于A所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
+在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/08/21/MySQL事务漫谈/"/>
+
+
+
+
+
+  <title>MySQL事务漫谈 | zjiash的博客</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">zjiash的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/21/MySQL事务漫谈/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                MySQL事务漫谈
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-21T14:30:17+08:00">
+                2018-08-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/08/21/MySQL事务漫谈/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2018/08/21/MySQL事务漫谈/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>###事务的基本属性</p>
+<h4 id="关于C"><a href="#关于C" class="headerlink" title="关于C"></a>关于C</h4><p>在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)</p>
+<h4 id="关于A"><a href="#关于A" class="headerlink" title="关于A"></a>关于A</h4><p>所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。</p>
+<p>在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。后者由数据库的原子性来保证，即在同一个事务内部的一组操作必须全部执行成功或者全部失败。</p>
+<p>原子性的实现依赖回滚日志（Undo）。</p>
+<h4 id="关于I"><a href="#关于I" class="headerlink" title="关于I"></a>关于I</h4><p>但是原子性并不能完全保证一致性，比如在多个事务并发进行的情况下，事务A的结果可能被事务B覆盖。因此需要引入隔离性，即多个事务并发执行后的状态，和它们串行执行后的状态是等价的。</p>
+<p>隔离性的实现依赖锁：悲观锁（加锁）和乐观锁（MVCC）。</p>
+<h4 id="关于D"><a href="#关于D" class="headerlink" title="关于D"></a>关于D</h4><p>持久性体现在：一旦事务被提交，数据要是持久存储的。</p>
+<p>持久性的实现依赖落盘，为了高效实现，引入了重做日志（Redo）。</p>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>ACID是数据库运行的基石，原子性和持久性比较好理解，一致性除了对数据库本身的要求，还对业务开发者提出了要求——逻辑必须正确。隔离性比较复杂，有不同的隔离级别，实现起来对数据库的性能影响会比较大。</p>
+<p>本文先专注于原子性和持久性的实现，关于隔离性的讨论放到下一篇文章。</p>
+<h3 id="Undo日志"><a href="#Undo日志" class="headerlink" title="Undo日志"></a>Undo日志</h3><p>基本的数据流程：先将数据从磁盘读到内存中，然后修改内存中的数据，最后将数据写回磁盘。这里面的任何异常都会导致原子性无法满足，比如执行一般抛出异常、写磁盘中途故障等等。引入Undo日志，可以保证原子性。</p>
+<p>Undo日志记录旧数据，可以实现原子性，数据操作之前，先写Undo日志，然后再进行数据修改，出现异常使用Undo日志回滚。</p>
+<p>流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">A.事务开始.</span><br><span class="line">B.记录A=1到undo log.</span><br><span class="line">C.修改A=3.</span><br><span class="line">D.记录B=2到undo log.</span><br><span class="line">E.修改B=4.</span><br><span class="line">F.将undo log写到磁盘。</span><br><span class="line">G.将数据写到磁盘。</span><br><span class="line">H.事务提交</span><br></pre></td></tr></table></figure>
+<p>核心思想：</p>
+<ol>
+<li>更新数据前记录Undo日志，写磁盘也是，Undo日志先落盘。</li>
+<li>为了保证持久性，提交前需要将数据刷到磁盘。（没有Redo日志）</li>
+<li>先刷Undo日志的目的：保证在G~H之间系统崩溃，undo log是完整的，可以用来回滚。</li>
+<li>如果A~F直接崩溃，数据还未持久化到磁盘，无影响。undo log如果只刷一半，也是没有影响的。</li>
+</ol>
+<p>存在的问题：undo log可以顺序刷磁盘，性能还行。数据刷磁盘需要随机，性能就很低了。如果缓存数据，可以保证原子性，但是没办法保证持久性，提交之后的日志还会回滚，undo log只能恢复到旧值，没办法恢复到新值。持久性保证需要引入Redo日志。</p>
+<h3 id="Redo日志"><a href="#Redo日志" class="headerlink" title="Redo日志"></a>Redo日志</h3><p>Redo日志和Undo日志相反，记录旧数据，在事务提交前，只要将Redo日志持久化，不需要将数据持久化。系统奔溃之后也能根据持久化的Redo日志来恢复。</p>
+<p>流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">A.事务开始.</span><br><span class="line">B.记录A=1到undo log.</span><br><span class="line">C.修改A=3.</span><br><span class="line">D.记录A=3到redo log.</span><br><span class="line">E.记录B=2到undo log.</span><br><span class="line">F.修改B=4.</span><br><span class="line">G.记录B=4到redo log.</span><br><span class="line">H.将redo log写入磁盘。</span><br><span class="line">I.事务提交</span><br></pre></td></tr></table></figure>
+<p>核心思想：</p>
+<ol>
+<li>为了保证持久性，必须在事务提交前将Redo日志持久化。</li>
+<li>数据不需要在事务提交前写入磁盘，而是缓存在内存中，且必须晚于Redo日志持久化。</li>
+<li>Redo日志保证持久性，Undo日志保证原子性。</li>
+<li>Redo日志采取内存批量buffer和顺序追加的方式来改善性能。</li>
+<li>并发事务共享Redo日志，按执顺序依次记录，节省空间，进一步提升性能。但是会导致未提交的事务日志写入磁盘。</li>
+</ol>
+<p>恢复：</p>
+<ol>
+<li>两种策略：<ul>
+<li>恢复时，只重做已经提交了的事务。</li>
+<li>恢复时，重做所有事务（包括未提交和回滚的事务），然后通过Undo日志回滚未提交的事务。</li>
+</ul>
+</li>
+<li>MySQL数据库InnoDB存储引擎使用了第二种策略<ul>
+<li>重做Redo日志时，不关心是哪个事务，直接重做，然后再执行Undo日志</li>
+<li>必须保证Undo日志持久化，且必须先于Redo日志持久化。</li>
+<li>这种关联带来了复杂性，为了降低复杂性，InnoDB将undo log看作数据，因此记录undo log的操作也会记录到redo log中。这样就可以通过redo log来执行undo操作了。</li>
+</ul>
+</li>
+<li>回滚的事务也会被恢复，只不过在恢复时的操作就是先redo再undo，不会破坏一致性。</li>
+</ol>
+<h4 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h4><p>Undo和Redo只是一种逻辑上的划分，MySQL的实现还考虑了隔离性的问题，如果不考虑隔离性，用一条记录同时保持新值和就值就可以达到上述目标。</p>
+<h3 id="其他问题"><a href="#其他问题" class="headerlink" title="其他问题"></a>其他问题</h3><p>原子性的基础：日志记录是完整的，不存在半行的日志落盘等。</p>
+<p>还有一个问题：事务的提交动作是怎样的？一般来说Redo日志记录COMMIT标记即可。这个对于MySQL主从是有问题的。</p>
+<p>为了保证master和slave的数据一致性，就必须保证binlog和InnoDB redo日志的一致性。因为从库通过二进制日志重放主库提交的事务，而主库binlog写入在commit之前，如果写完binlog主库crash，再次启动时会回滚事务。但此时从库已经执行，则会造成主备数据不一致。所以在开启Binlog后，如何保证binlog和InnoDB redo日志的一致性呢？</p>
+<p>Commit阶段包含两步：write/sync Binlog和InnoDB commit。binlog的写入与否作为事务提交成功与否的标志，innodb commit标志并不是事务提交成功与否的标志。依赖Redo日志，binlog日志可以做到非重复（个人猜测）。</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><ol>
+<li><a href="https://draveness.me/mysql-transaction#" target="_blank" rel="external">https://draveness.me/mysql-transaction#</a></li>
+<li><a href="https://www.qiancheng.me/post/coding/mysql-001" target="_blank" rel="external">https://www.qiancheng.me/post/coding/mysql-001</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"># mysql</a>
+          
+            <a href="/tags/database/" rel="tag"># database</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/19/MySQL隔离级别及实现/" rel="next" title="MySQL隔离级别及实现">
+                <i class="fa fa-chevron-left"></i> MySQL隔离级别及实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/08/21/MySQL事务隔离性/" rel="prev" title="MySQL事务隔离性">
+                MySQL事务隔离性 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2018/08/21/MySQL事务漫谈/"
+           data-title="MySQL事务漫谈" data-url="http://yoursite.com/2018/08/21/MySQL事务漫谈/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="zjiash" />
+          <p class="site-author-name" itemprop="name">zjiash</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">26</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/zjiash" target="_blank" title="github">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  github
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#关于C"><span class="nav-number">1.</span> <span class="nav-text">关于C</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于A"><span class="nav-number">2.</span> <span class="nav-text">关于A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于I"><span class="nav-number">3.</span> <span class="nav-text">关于I</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于D"><span class="nav-number">4.</span> <span class="nav-text">关于D</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Undo日志"><span class="nav-number"></span> <span class="nav-text">Undo日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redo日志"><span class="nav-number"></span> <span class="nav-text">Redo日志</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#小结-1"><span class="nav-number">1.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他问题"><span class="nav-number"></span> <span class="nav-text">其他问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考文献"><span class="nav-number"></span> <span class="nav-text">参考文献</span></a></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zjiash</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问人数
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"zjiash"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

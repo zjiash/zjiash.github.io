@@ -273,6 +273,836 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/17/Spark任务提交之RDD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/04/17/Spark任务提交之RDD/" itemprop="url">
+                  Spark任务提交之RDD
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-17T13:50:54+08:00">
+                2017-04-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/大数据/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/17/Spark任务提交之RDD/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/17/Spark任务提交之RDD/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="RDD"><a href="#RDD" class="headerlink" title="RDD"></a>RDD</h3><p>RDD的全名是Resilient Distributed Dataset，意思是容错的分布式数据集。RDD是Spark任务的输入，Spark应用一般是通过对RDD进行计算得到结果，结果可以是RDD，也可以是reduce的值。Spark框架提供了很多RDD的算子。根据源码里面的解释，RDD具有如下5个特征：</p>
+<ol>
+<li>A list of partitions</li>
+<li>A function for computing each split</li>
+<li>A list of dependencies on other RDDs</li>
+<li>Optionally, a Partitioner for key-value RDDs (e.g. to say that the RDD is hash-partitioned)</li>
+<li>Optionally, a list of preferred locations to compute each split on (e.g. block locations for an HDFS file)</li>
+</ol>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Implemented by subclasses to compute a given partition.</span><br><span class="line"> */</span></span><br><span class="line"><span class="meta">@DeveloperApi</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">T</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Implemented by subclasses to return the set of partitions in this RDD. This method will only</span><br><span class="line"> * be called once, so it is safe to implement a time-consuming computation in it.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getPartitions</span></span>: <span class="type">Array</span>[<span class="type">Partition</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Implemented by subclasses to return how this RDD depends on parent RDDs. This method will only</span><br><span class="line"> * be called once, so it is safe to implement a time-consuming computation in it.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getDependencies</span></span>: <span class="type">Seq</span>[<span class="type">Dependency</span>[_]] = deps</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Optionally overridden by subclasses to specify placement preferences.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getPreferredLocations</span></span>(split: <span class="type">Partition</span>): <span class="type">Seq</span>[<span class="type">String</span>] = <span class="type">Nil</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/** Optionally overridden by subclasses to specify how they are partitioned. */</span></span><br><span class="line"><span class="meta">@transient</span> <span class="keyword">val</span> partitioner: <span class="type">Option</span>[<span class="type">Partitioner</span>] = <span class="type">None</span></span><br></pre></td></tr></table></figure>
+<h3 id="MapPartitionsRDD"><a href="#MapPartitionsRDD" class="headerlink" title="MapPartitionsRDD"></a>MapPartitionsRDD</h3><p>就拿我们最常见的<code>textFile</code>来看，内部调用了<code>hadoopFile</code>，<code>hadoopFile</code>方法封装了一下参数之后，直接返回了<code>HadoopRDD</code>。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> hdfsFile = sc.textFile(args(<span class="number">1</span>))</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Read a text file from HDFS, a local file system (available on all nodes), or any</span><br><span class="line"> * Hadoop-supported file system URI, and return it as an RDD of Strings.</span><br><span class="line"> */</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">textFile</span></span>(</span><br><span class="line">    path: <span class="type">String</span>,</span><br><span class="line">    minPartitions: <span class="type">Int</span> = defaultMinPartitions): <span class="type">RDD</span>[<span class="type">String</span>] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[<span class="type">TextInputFormat</span>], classOf[<span class="type">LongWritable</span>], classOf[<span class="type">Text</span>],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>HadoopRDD</code>继承自RDD，自然需要实现上面的5个接口。</p>
+<ol>
+<li><code>getPartitions</code>直接根据InputFormat的Splits返回<code>HadoopPartition</code>，一个split对应一个partition</li>
+<li><code>compute</code>方法得出一个可遍历的结果，封装RecordReader得到Iterator</li>
+<li><code>getDependencies</code>继承的时候就设置为空了<code>RDD[(K, V)](sc, Nil)</code>，不需要覆盖</li>
+<li><code>getPreferredLocations</code>同Hadoop</li>
+<li><code>partitioner</code>也不需要，为空</li>
+</ol>
+<p>返回的<code>HadoopRDD</code>紧接着调用了map方法，转换成<code>MapPartitionsRDD</code>，<code>HadoopRDD</code>成了<code>MapPartitionsRDD</code>的父依赖了，这个OneToOneDependency是一个窄依赖。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Return a new RDD by applying a function to all elements of this RDD.</span><br><span class="line"> */</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">map</span></span>[<span class="type">U</span>: <span class="type">ClassTag</span>](f: <span class="type">T</span> =&gt; <span class="type">U</span>): <span class="type">RDD</span>[<span class="type">U</span>] = withScope &#123;</span><br><span class="line">  <span class="keyword">val</span> cleanF = sc.clean(f)</span><br><span class="line">  <span class="keyword">new</span> <span class="type">MapPartitionsRDD</span>[<span class="type">U</span>, <span class="type">T</span>](<span class="keyword">this</span>, (context, pid, iter) =&gt; iter.map(cleanF))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>[spark] <span class="class"><span class="keyword">class</span> <span class="title">MapPartitionsRDD</span>[<span class="type">U</span>: <span class="type">ClassTag</span>, <span class="type">T</span>: <span class="type">ClassTag</span>](<span class="params"></span><br><span class="line">  var prev: <span class="type">RDD</span>[<span class="type">T</span>],</span><br><span class="line">  f: (<span class="type">TaskContext</span>, <span class="type">Int</span>, <span class="type">Iterator</span>[<span class="type">T</span>]</span>) <span class="title">=&gt;</span> <span class="title">Iterator</span>[<span class="type">U</span>],  <span class="title">//</span> (<span class="params"><span class="type">TaskContext</span>, partition index, iterator</span>)</span></span><br><span class="line">  preservesPartitioning: <span class="type">Boolean</span> = <span class="literal">false</span>)</span><br><span class="line"><span class="keyword">extends</span> <span class="type">RDD</span>[<span class="type">U</span>](prev) &#123;</span><br><span class="line"><span class="comment">// RDD[U]建立依赖关系，</span></span><br><span class="line"><span class="comment">// def this(@transient oneParent: RDD[_]) =</span></span><br><span class="line"><span class="comment">//   this(oneParent.context , List(new OneToOneDependency(oneParent)))</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// getPartitions直接使用窄依赖parent的partitions</span></span><br><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getPartitions</span></span>: <span class="type">Array</span>[<span class="type">Partition</span>] = firstParent[<span class="type">T</span>].partitions</span><br><span class="line"></span><br><span class="line"><span class="comment">// 转换函数直接封装之前的迭代器</span></span><br><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">U</span>] =</span><br><span class="line">  f(context, split.index, firstParent[<span class="type">T</span>].iterator(split, context))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// (context, pid, iter) =&gt; iter.map(cleanF)里面的map就是scala语言的map</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">map</span></span>[<span class="type">B</span>](f: <span class="type">A</span> =&gt; <span class="type">B</span>): <span class="type">Iterator</span>[<span class="type">B</span>] = <span class="keyword">new</span> <span class="type">AbstractIterator</span>[<span class="type">B</span>] &#123;</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">hasNext</span> </span>= self.hasNext</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">next</span></span>() = f(self.next())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="ShuffledRDD"><a href="#ShuffledRDD" class="headerlink" title="ShuffledRDD"></a>ShuffledRDD</h3><p>上文的RDD转换比较简单，我们再看一下RDD里面的<code>distinct()</code>，使用了reduceByKey操作，追杀发现</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">combineByKeyWithClassTag</span></span>[<span class="type">C</span>](</span><br><span class="line">      createCombiner: <span class="type">V</span> =&gt; <span class="type">C</span>,</span><br><span class="line">      mergeValue: (<span class="type">C</span>, <span class="type">V</span>) =&gt; <span class="type">C</span>,</span><br><span class="line">      mergeCombiners: (<span class="type">C</span>, <span class="type">C</span>) =&gt; <span class="type">C</span>,</span><br><span class="line">      partitioner: <span class="type">Partitioner</span>,</span><br><span class="line">      mapSideCombine: <span class="type">Boolean</span> = <span class="literal">true</span>,</span><br><span class="line">      serializer: <span class="type">Serializer</span> = <span class="literal">null</span>)(<span class="keyword">implicit</span> ct: <span class="type">ClassTag</span>[<span class="type">C</span>]): <span class="type">RDD</span>[(<span class="type">K</span>, <span class="type">C</span>)] = self.withScope &#123;</span><br><span class="line">    <span class="keyword">val</span> aggregator = <span class="keyword">new</span> <span class="type">Aggregator</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>](</span><br><span class="line">      self.context.clean(createCombiner),</span><br><span class="line">      self.context.clean(mergeValue),</span><br><span class="line">      self.context.clean(mergeCombiners))</span><br><span class="line">    <span class="keyword">if</span> (self.partitioner == <span class="type">Some</span>(partitioner)) &#123;</span><br><span class="line">      <span class="comment">// 如果本身就是shuffle好的，直接map即可</span></span><br><span class="line">      <span class="comment">// 这个一般不成立，除非之前已经shuffle过了</span></span><br><span class="line">      self.mapPartitions(iter =&gt; &#123;</span><br><span class="line">        <span class="keyword">val</span> context = <span class="type">TaskContext</span>.get()</span><br><span class="line">        <span class="keyword">new</span> <span class="type">InterruptibleIterator</span>(context, aggregator.combineValuesByKey(iter, context))</span><br><span class="line">      &#125;, preservesPartitioning = <span class="literal">true</span>)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 否则需要shuffle  </span></span><br><span class="line">      <span class="keyword">new</span> <span class="type">ShuffledRDD</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>](self, partitioner)</span><br><span class="line">        .setSerializer(serializer)</span><br><span class="line">        .setAggregator(aggregator)</span><br><span class="line">        .setMapSideCombine(mapSideCombine)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p><code>ShuffledRDD</code>的计算会被切分成map和reduce两个Stage，map结束之后再拉取数据进行reduce，这部分依赖Spark的storage模块，RDD仅仅是数据的“形”，封装了诸多接口，RDD真正的“体”是由storage模块来实现和管理。就像初始化的Hadoop文件可以创建RDD外，中间真正计算出来的RDD的存取都是由storage模块来负责的，这部分的内容后续会介绍。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ShuffledRDD</span>[<span class="type">K</span>: <span class="type">ClassTag</span>, <span class="type">V</span>: <span class="type">ClassTag</span>, <span class="type">C</span>: <span class="type">ClassTag</span>](<span class="params"></span><br><span class="line">    @transient var prev: <span class="type">RDD</span>[_ &lt;: <span class="type">Product2</span>[<span class="type">K</span>, <span class="type">V</span>]],</span><br><span class="line">    part: <span class="type">Partitioner</span></span>)</span></span><br><span class="line">  <span class="keyword">extends</span> <span class="type">RDD</span>[(<span class="type">K</span>, <span class="type">C</span>)](prev.context, <span class="type">Nil</span>) &#123;</span><br><span class="line">  <span class="comment">// 这里并没有传入依赖</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 依赖关系是创建出来的，不像MapPartitionsRDD直接通过RDD即可确定</span></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getDependencies</span></span>: <span class="type">Seq</span>[<span class="type">Dependency</span>[_]] = &#123;</span><br><span class="line">    <span class="type">List</span>(<span class="keyword">new</span> <span class="type">ShuffleDependency</span>(prev, part, serializer, keyOrdering, aggregator, mapSideCombine))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 传进来的partitioner，一般就是HashPartitioner</span></span><br><span class="line">  <span class="keyword">override</span> <span class="keyword">val</span> partitioner = <span class="type">Some</span>(part)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getPartitions</span></span>: <span class="type">Array</span>[<span class="type">Partition</span>] = &#123;</span><br><span class="line">    <span class="type">Array</span>.tabulate[<span class="type">Partition</span>](part.numPartitions)(i =&gt; <span class="keyword">new</span> <span class="type">ShuffledRDDPartition</span>(i))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getPreferredLocations</span></span>(partition: <span class="type">Partition</span>): <span class="type">Seq</span>[<span class="type">String</span>] = &#123;</span><br><span class="line">    <span class="keyword">val</span> tracker = <span class="type">SparkEnv</span>.get.mapOutputTracker.asInstanceOf[<span class="type">MapOutputTrackerMaster</span>]</span><br><span class="line">    <span class="keyword">val</span> dep = dependencies.head.asInstanceOf[<span class="type">ShuffleDependency</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>]]</span><br><span class="line">    tracker.getPreferredLocationsForShuffle(dep, partition.index)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// reduce函数已经封装在ShuffleDependency里面了</span></span><br><span class="line">  <span class="comment">// shuffle依赖Spark的shuffleManager，这个后续再慢慢探究</span></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[(<span class="type">K</span>, <span class="type">C</span>)] = &#123;</span><br><span class="line">    <span class="keyword">val</span> dep = dependencies.head.asInstanceOf[<span class="type">ShuffleDependency</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>]]</span><br><span class="line">    <span class="type">SparkEnv</span>.get.shuffleManager.getReader(dep.shuffleHandle, split.index, split.index + <span class="number">1</span>, context)</span><br><span class="line">      .read()</span><br><span class="line">      .asInstanceOf[<span class="type">Iterator</span>[(<span class="type">K</span>, <span class="type">C</span>)]]</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/10/Spark任务提交之Deploy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/04/10/Spark任务提交之Deploy/" itemprop="url">
+                  Spark任务提交之Deploy
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-10T21:16:22+08:00">
+                2017-04-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/大数据/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/10/Spark任务提交之Deploy/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/10/Spark任务提交之Deploy/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>项目中使用到了Spark，一直都是处在应用状态，最近有时间想研究下Spark是如何运行的。之前对Hadoop和Scala都有所了解，觉得Spark可以看成是分布式的Scala执行环境，因为各种RDD的转换实在是和Scala的函数式编程太像了。相比Hadoop，Spark可以看成是基于内存的MapReduce。实际上这些认识都太肤浅了，这个系列会简单剖析下Spark的运行原理。</p>
+<p>在Hadoop2.0版本之前，Hadoop的JobTrack需要同时承担资源管理以及应用监控两重任务，容易成为瓶颈，限制集群的最大规模。引入YARN之后，全局的ResourceManager（RM）和与每个应用相关的ApplicationMaster（AM）承担了JobTrack的功能。RM负责接收应用，并根据集群资源情况调度（调度器Scheduler组件）应用运行；每个被调度的应用会在集群中启动一个AM，AM负责同调度器协商以获取合适的容器，并跟踪这些容器的状态和监控其进度。</p>
+<p>Spark在资源管理和调度方式上采用了类似于Hadoop YARN的方式。最上层是资源调度器，它负责分配资源和调度注册到Spark中的所有应用，Spark有自带的standalone集群框架，也可以使用Mesos或是YARN等作为其资源调度框架。在每一个应用内部，Spark又实现了任务调度器（由drive负责），负责任务的调度和协调。本文主要介绍资源分配的部分，由于项目使用的Spark版本为1.6.2，因此本系列的源码都基于该版本。</p>
+<p>提交spark任务需要通过<code>spark-submit</code>命令，对应的<code>org.apache.spark.deploy.SparkSubmit</code>的main方法</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span></span>(args: <span class="type">Array</span>[<span class="type">String</span>]): <span class="type">Unit</span> = &#123;</span><br><span class="line">  <span class="keyword">val</span> appArgs = <span class="keyword">new</span> <span class="type">SparkSubmitArguments</span>(args)</span><br><span class="line">  ...</span><br><span class="line">  appArgs.action <span class="keyword">match</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">SUBMIT</span> =&gt; submit(appArgs)</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">KILL</span> =&gt; kill(appArgs)</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">REQUEST_STATUS</span> =&gt; requestStatus(appArgs)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submit</span></span>(args: <span class="type">SparkSubmitArguments</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">  <span class="keyword">val</span> (childArgs, childClasspath, sysProps, childMainClass) = prepareSubmitEnvironment(args)</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// 中间有些曲折，实际上调用的就是runMain</span></span><br><span class="line">  runMain(childArgs, childClasspath, sysProps, childMainClass, args.verbose)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>runMain</code>通过反射调用childMainClass，主要看看<code>prepareSubmitEnvironment</code>。该方法为应用提交准备环境，设置命令行参数，比如应用运行的集群master以及driver的部署方式。driver的部署模式有两种：client和cluster，默认是client，直接在本地运行driver（此时的childMainClass就是application main class），cluster则是将driver也放到集群上运行。</p>
+<p>cluster的部署方式主要有三种：</p>
+<ol>
+<li>standalone的childMainClass是<code>org.apache.spark.deploy.Client</code></li>
+<li>yarn模式的childMainClass是<code>org.apache.spark.deploy.yarn.Client</code></li>
+<li>mesos模式的childMainClass是<code>org.apache.spark.deploy.rest.RestSubmissionClient</code></li>
+</ol>
+<p>奇怪的是，源码里面根本没有<code>org.apache.spark.deploy.yarn.Client</code>这个类，先研究standalone这种模式好了。（原来这个类在yarn那个目录下，IDE没有识别出来，先把基本的流程搞清楚，后续再研究yarn的模式）</p>
+<p><code>org.apache.spark.deploy.Client</code>的main方法会创建一个<code>ClientEndpoint</code>，启动之后（onStart方法）会向master发送RequestSubmitDriver消息，master收到消息的代码如下：</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">RequestSubmitDriver</span>(description) =&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (state != <span class="type">RecoveryState</span>.<span class="type">ALIVE</span>) &#123;</span><br><span class="line">      ...</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      logInfo(<span class="string">"Driver submitted "</span> + description.command.mainClass)</span><br><span class="line">      <span class="keyword">val</span> driver = createDriver(description)</span><br><span class="line">      <span class="comment">// driver封装的cmd就是application main class</span></span><br><span class="line">      persistenceEngine.addDriver(driver)</span><br><span class="line">      waitingDrivers += driver</span><br><span class="line">      drivers.add(driver)</span><br><span class="line">      <span class="comment">// 调度</span></span><br><span class="line">      schedule()</span><br><span class="line">      <span class="comment">// 告诉client提交成功了，把driver.id返回</span></span><br><span class="line">      context.reply(<span class="type">SubmitDriverResponse</span>(self, <span class="literal">true</span>, <span class="type">Some</span>(driver.id),</span><br><span class="line">        <span class="string">s"Driver successfully submitted as <span class="subst">$&#123;driver.id&#125;</span>"</span>))</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>下面是schedule的代码，每次有新的应用提交或者资源可用变动（resource availability changes）时会被调用，先调度driver程序，然后再调度app，调度app的方式是从各个worker里面和App进行匹配，看需要分配多少个cpu。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">schedule</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">if</span> (state != <span class="type">RecoveryState</span>.<span class="type">ALIVE</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Drivers take strict precedence over executors</span></span><br><span class="line">    <span class="keyword">val</span> shuffledAliveWorkers = <span class="type">Random</span>.shuffle(workers.toSeq.filter(_.state == <span class="type">WorkerState</span>.<span class="type">ALIVE</span>))</span><br><span class="line">    <span class="keyword">val</span> numWorkersAlive = shuffledAliveWorkers.size</span><br><span class="line">    <span class="keyword">var</span> curPos = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> (driver &lt;- waitingDrivers.toList) &#123; <span class="comment">// iterate over a copy of waitingDrivers</span></span><br><span class="line">      <span class="comment">// We assign workers to each waiting driver in a round-robin fashion. For each driver, we</span></span><br><span class="line">      <span class="comment">// start from the last worker that was assigned a driver, and continue onwards until we have</span></span><br><span class="line">      <span class="comment">// explored all alive workers.</span></span><br><span class="line">      <span class="keyword">var</span> launched = <span class="literal">false</span></span><br><span class="line">      <span class="keyword">var</span> numWorkersVisited = <span class="number">0</span></span><br><span class="line">      <span class="keyword">while</span> (numWorkersVisited &lt; numWorkersAlive &amp;&amp; !launched) &#123;</span><br><span class="line">        <span class="keyword">val</span> worker = shuffledAliveWorkers(curPos)</span><br><span class="line">        numWorkersVisited += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> (worker.memoryFree &gt;= driver.desc.mem &amp;&amp; worker.coresFree &gt;= driver.desc.cores) &#123;</span><br><span class="line">          <span class="comment">// 启动driver</span></span><br><span class="line">          launchDriver(worker, driver)</span><br><span class="line">          waitingDrivers -= driver</span><br><span class="line">          launched = <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">        curPos = (curPos + <span class="number">1</span>) % numWorkersAlive</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    startExecutorsOnWorkers()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// executor的调度需要结合app，有application之后才会调用，这个在后续的任务调度会分析，需要driver先运行起来之后才会有</span></span><br><span class="line">  <span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">startExecutorsOnWorkers</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="comment">// Right now this is a very simple FIFO scheduler. We keep trying to fit in the first app</span></span><br><span class="line">    <span class="comment">// in the queue, then the second app, etc.</span></span><br><span class="line">    <span class="keyword">for</span> (app &lt;- waitingApps <span class="keyword">if</span> app.coresLeft &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">val</span> coresPerExecutor: <span class="type">Option</span>[<span class="type">Int</span>] = app.desc.coresPerExecutor</span><br><span class="line">      <span class="comment">// Filter out workers that don't have enough resources to launch an executor</span></span><br><span class="line">      <span class="keyword">val</span> usableWorkers = workers.toArray.filter(_.state == <span class="type">WorkerState</span>.<span class="type">ALIVE</span>)</span><br><span class="line">        .filter(worker =&gt; worker.memoryFree &gt;= app.desc.memoryPerExecutorMB &amp;&amp;</span><br><span class="line">          worker.coresFree &gt;= coresPerExecutor.getOrElse(<span class="number">1</span>))</span><br><span class="line">        .sortBy(_.coresFree).reverse</span><br><span class="line">      <span class="keyword">val</span> assignedCores = scheduleExecutorsOnWorkers(app, usableWorkers, spreadOutApps)</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Now that we've decided how many cores to allocate on each worker, let's allocate them</span></span><br><span class="line">      <span class="keyword">for</span> (pos &lt;- <span class="number">0</span> until usableWorkers.length <span class="keyword">if</span> assignedCores(pos) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        allocateWorkerResourceToExecutors(</span><br><span class="line">          app, assignedCores(pos), coresPerExecutor, usableWorkers(pos))</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p><code>startExecutorsOnWorkers()</code>按照FIFO方式为每个app分配executor，<code>allocateWorkerResourceToExecutors</code>通过<code>launchExecutor(worker, exec)</code>启动executor。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">launchDriver</span></span>(worker: <span class="type">WorkerInfo</span>, driver: <span class="type">DriverInfo</span>) &#123;</span><br><span class="line">  logInfo(<span class="string">"Launching driver "</span> + driver.id + <span class="string">" on worker "</span> + worker.id)</span><br><span class="line">  worker.addDriver(driver)</span><br><span class="line">  driver.worker = <span class="type">Some</span>(worker)</span><br><span class="line">  worker.endpoint.send(<span class="type">LaunchDriver</span>(driver.id, driver.desc))</span><br><span class="line">  driver.state = <span class="type">DriverState</span>.<span class="type">RUNNING</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">launchExecutor</span></span>(worker: <span class="type">WorkerInfo</span>, exec: <span class="type">ExecutorDesc</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">  logInfo(<span class="string">"Launching executor "</span> + exec.fullId + <span class="string">" on worker "</span> + worker.id)</span><br><span class="line">  worker.addExecutor(exec)</span><br><span class="line">  worker.endpoint.send(<span class="type">LaunchExecutor</span>(masterUrl,</span><br><span class="line">    exec.application.id, exec.id, exec.application.desc, exec.cores, exec.memory))</span><br><span class="line">  exec.application.driver.send(</span><br><span class="line">    <span class="type">ExecutorAdded</span>(exec.id, worker.id, worker.hostPort, exec.cores, exec.memory))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>二者都是给相应的worker发送Launch消息，executor起来后，还需要给driver发送ExecutorAdded的消息，表示任务已经开始做了。</p>
+<p>每个<code>org.apache.spark.deploy.worker.Worker</code>启动后会通过<code>registerWithMaster()</code>方法向Master注册。收到Launch消息后，worker会启动相应的线程运行driver和executor。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">LaunchDriver</span>(driverId, driverDesc) =&gt; &#123;</span><br><span class="line">    logInfo(<span class="string">s"Asked to launch driver <span class="subst">$driverId</span>"</span>)</span><br><span class="line">    <span class="keyword">val</span> driver = <span class="keyword">new</span> <span class="type">DriverRunner</span>(</span><br><span class="line">      conf,</span><br><span class="line">      driverId,</span><br><span class="line">      workDir,</span><br><span class="line">      sparkHome,</span><br><span class="line">      driverDesc.copy(command = <span class="type">Worker</span>.maybeUpdateSSLSettings(driverDesc.command, conf)),</span><br><span class="line">      self,</span><br><span class="line">      workerUri,</span><br><span class="line">      securityMgr)</span><br><span class="line">    drivers(driverId) = driver</span><br><span class="line">    driver.start()</span><br><span class="line"></span><br><span class="line">    coresUsed += driverDesc.cores</span><br><span class="line">    memoryUsed += driverDesc.mem</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 收到LaunchExecutor之后，启动ExecutorRunner，并给Master发送消息</span></span><br><span class="line">  <span class="comment">// manager是ExecutorRunner，start之后会下载和运行executor</span></span><br><span class="line">  manager.start()</span><br><span class="line">  sendToMaster(<span class="type">ExecutorStateChanged</span>(appId, execId, manager.state, <span class="type">None</span>, <span class="type">None</span>))</span><br></pre></td></tr></table></figure>
+<p>Master收到ExecutorStateChanged消息之后，会给client发送ExecutorUpdated消息，如果任务结束，还会移除executor。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">ExecutorStateChanged</span>(appId, execId, state, message, exitStatus) =&gt; &#123;</span><br><span class="line">  <span class="keyword">val</span> execOption = idToApp.get(appId).flatMap(app =&gt; app.executors.get(execId))</span><br><span class="line">  execOption <span class="keyword">match</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">Some</span>(exec) =&gt; &#123;</span><br><span class="line">      <span class="keyword">val</span> appInfo = idToApp(appId)</span><br><span class="line">      <span class="keyword">val</span> oldState = exec.state</span><br><span class="line">      exec.state = state</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (state == <span class="type">ExecutorState</span>.<span class="type">RUNNING</span>) &#123;</span><br><span class="line">        assert(oldState == <span class="type">ExecutorState</span>.<span class="type">LAUNCHING</span>,</span><br><span class="line">          <span class="string">s"executor <span class="subst">$execId</span> state transfer from <span class="subst">$oldState</span> to RUNNING is illegal"</span>)</span><br><span class="line">        appInfo.resetRetryCount()</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 给driver发消息</span></span><br><span class="line">      exec.application.driver.send(<span class="type">ExecutorUpdated</span>(execId, state, message, exitStatus))</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (<span class="type">ExecutorState</span>.isFinished(state)) &#123;</span><br><span class="line">        <span class="comment">// Remove this executor from the worker and app</span></span><br><span class="line">        logInfo(<span class="string">s"Removing executor <span class="subst">$&#123;exec.fullId&#125;</span> because it is <span class="subst">$state</span>"</span>)</span><br><span class="line">        <span class="comment">// If an application has already finished, preserve its</span></span><br><span class="line">        <span class="comment">// state to display its information properly on the UI</span></span><br><span class="line">        <span class="keyword">if</span> (!appInfo.isFinished) &#123;</span><br><span class="line">          appInfo.removeExecutor(exec)</span><br><span class="line">        &#125;</span><br><span class="line">        exec.worker.removeExecutor(exec)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">val</span> normalExit = exitStatus == <span class="type">Some</span>(<span class="number">0</span>)</span><br><span class="line">        <span class="comment">// Only retry certain number of times so we don't go into an infinite loop.</span></span><br><span class="line">        <span class="keyword">if</span> (!normalExit) &#123;</span><br><span class="line">          <span class="keyword">if</span> (appInfo.incrementRetryCount() &lt; <span class="type">ApplicationState</span>.<span class="type">MAX_NUM_RETRY</span>) &#123;</span><br><span class="line">            schedule()</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">val</span> execs = appInfo.executors.values</span><br><span class="line">            <span class="keyword">if</span> (!execs.exists(_.state == <span class="type">ExecutorState</span>.<span class="type">RUNNING</span>)) &#123;</span><br><span class="line">              logError(<span class="string">s"Application <span class="subst">$&#123;appInfo.desc.name&#125;</span> with ID <span class="subst">$&#123;appInfo.id&#125;</span> failed "</span> +</span><br><span class="line">                <span class="string">s"<span class="subst">$&#123;appInfo.retryCount&#125;</span> times; removing it"</span>)</span><br><span class="line">              removeApplication(appInfo, <span class="type">ApplicationState</span>.<span class="type">FAILED</span>)</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">None</span> =&gt;</span><br><span class="line">      logWarning(<span class="string">s"Got status update for unknown executor <span class="subst">$appId</span>/<span class="subst">$execId</span>"</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="总结流程"><a href="#总结流程" class="headerlink" title="总结流程"></a>总结流程</h3><ol>
+<li>SparkSubmit启动Client，如果是local模式，则直接在本地运行driver，Client就是driver</li>
+<li>如果是cluster模式，Client发送RequestSubmitDriver给Master，根据参数确定部署的方式</li>
+<li>Master接收到请求之后就开始调度，先调度driver程序，然后再调度executor（等待driver先起来），调度完成后会给Client返回SubmitDriverResponse消息</li>
+<li>Master为driver分配worker，发送LaunchDriver消息给worker，启动driver（应用主类）</li>
+<li>driver会提交app，向Master发送RegisterApplication消息，有app之后才会调度executor</li>
+<li>Master根据app为executor分配worker，发送LaunchExecutor消息给worker，启动executor，worker会给Master返回ExecutorStateChanged消息</li>
+<li>Master收到ExecutorStateChanged消息会给driver发送ExecutorUpdated消息</li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/05/HBase架构/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/04/05/HBase架构/" itemprop="url">
+                  HBase架构
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-05T10:29:50+08:00">
+                2017-04-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/大数据/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/05/HBase架构/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/05/HBase架构/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="概念和组件"><a href="#概念和组件" class="headerlink" title="概念和组件"></a>概念和组件</h3><ol>
+<li>Region<ul>
+<li>按行划分，负载均衡的最小单元，用户数据表由一个或多个Region组成</li>
+<li>在Region中每个ColumnFamily的数据组成一个Store</li>
+<li>每个Store由一个Memstore和多个HFile组成</li>
+</ul>
+</li>
+<li>Region Servers<ul>
+<li>维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region</li>
+<li>组件：<ul>
+<li>BlockCache：读缓存，LRU缓存，每个Region Server一个</li>
+<li>WAL：日志，写数据先进日志，每个Region Server一个</li>
+<li>MemStore：写缓存，每个CF一个</li>
+<li>HFile：MemStore刷到disk</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>HMaster<ul>
+<li>协调：<ul>
+<li>为Region Server分配Regions</li>
+<li>负责Region Server的负载均衡</li>
+<li>发现失效的Region Server并重新分配其上的Regions</li>
+</ul>
+</li>
+<li>管理：处理schema更新请求，比如新建表等</li>
+</ul>
+</li>
+<li>ZooKeeper<ul>
+<li>保证只有一个HMaster</li>
+<li>对Region Servers和HMaster状态提供通知机制，HMaster需要借助zk来知道节点的状态</li>
+<li>存储Meta表的地址</li>
+</ul>
+</li>
+<li>Meta Table<ul>
+<li>Key: table, start key, region id</li>
+<li>Values: RegionServer</li>
+<li>Client第一次读写需要从zk获取Meta表地址，也就是负责该表的Region Servers</li>
+<li>然后使用Scan + Table和Row信息定位到相应的记录</li>
+</ul>
+</li>
+</ol>
+<h3 id="读写过程"><a href="#读写过程" class="headerlink" title="读写过程"></a>读写过程</h3><ol>
+<li>Read<ul>
+<li>通过zk获取Meta表，然后定位到相应的Region Server</li>
+<li>首先读BlockCache，然后读MemStore，如果都读不到，再读HFile，可能需要读取多个小的HFiles（读放大影响）</li>
+<li>Region Server负责的Regions一般都在本地，不过当Regions重新分配（负载均衡或失效）时，可能需要负责远程的Region，直到major compact将远程的Region合并到本地</li>
+</ul>
+</li>
+<li>Write<ul>
+<li>先写WAL，然后写MemStore，进入MemStore就表示写成功了（client收到成功消息）</li>
+<li>写是一个顺序增加的过程，所有更新和删除操作都是在后续的compact过程中进行的，更新是版本，删除通过标志位</li>
+</ul>
+</li>
+<li>Compact<ul>
+<li>minor compact<ul>
+<li>以Store为单位进行，自动将小的HFiles合并成大HFile</li>
+<li>不会处理已经Deleted或Expired的Cell</li>
+<li>触发条件：Memstore Flush</li>
+</ul>
+</li>
+<li>major compact：将一个Region上的所有HFiles写成一个HFile，每个CF一个HFile；可配置为自动，会消耗大量IO和网络资源（写放大影响），并不需要经常运行</li>
+</ul>
+</li>
+<li>Split<ul>
+<li>Region达到一定大小的时候，超过设置的阈值，会自动split为两个大小相等的Regions</li>
+</ul>
+</li>
+</ol>
+<h3 id="失败恢复"><a href="#失败恢复" class="headerlink" title="失败恢复"></a>失败恢复</h3><ol>
+<li>HMaster失效会选出新的HMaster</li>
+<li>HMaster通过zk感知Region Server的上下线</li>
+<li>通过replay WAL重新恢复下线的Region Server</li>
+</ol>
+<h3 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h3><ol>
+<li>优势<ul>
+<li>强一致性：写成功对所有读都同时立即可见</li>
+<li>可拓展性：HDFS以及Region的自动化分，拓展Region Server非常方便</li>
+<li>高可靠性：容错和数据恢复</li>
+<li>生态环境：与Hadoop生态紧密结合</li>
+</ul>
+</li>
+<li>劣势<ul>
+<li>不够平滑，写放大和读放大</li>
+<li>数据恢复比较慢</li>
+</ul>
+</li>
+</ol>
+<h3 id="使用心得"><a href="#使用心得" class="headerlink" title="使用心得"></a>使用心得</h3><h4 id="HBase存储格式"><a href="#HBase存储格式" class="headerlink" title="HBase存储格式"></a>HBase存储格式</h4><ul>
+<li>定长的部分：Key Length + Value Length + Row Length + CF Length + Timestamp + Key Value = ( 4 + 4 + 2 + 1 + 8 + 1) = <font color="red">20 Bytes</font></li>
+<li>变长的部分：Row + Column Family + Column Qualifier + Value</li>
+<li>可以优化的部分：Row + Column Family + Column Qualifier</li>
+</ul>
+<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg" width="750" height="200" alt="HBase Key Value存储" style="clear: both; display: block; margin:auto; "></p>
+<h4 id="Row-Key的设计"><a href="#Row-Key的设计" class="headerlink" title="Row Key的设计"></a>Row Key的设计</h4><ul>
+<li>长度原则：越短越好，会影响HFile的存储效率，缓存的利用率</li>
+<li>散列原则：避免出现Region Server热点</li>
+<li>唯一原则：使用hash的话，需要考虑可能的冲突问题</li>
+</ul>
+<h4 id="命令行操作"><a href="#命令行操作" class="headerlink" title="命令行操作"></a>命令行操作</h4><ul>
+<li>deleteall命令无法删除带有将来时间戳的Cell</li>
+</ul>
+<p>参考资料：</p>
+<ul>
+<li><a href="https://www.mapr.com/blog/in-depth-look-hbase-architecture" target="_blank" rel="external">https://www.mapr.com/blog/in-depth-look-hbase-architecture</a> </li>
+<li><a href="http://prafull-blog.blogspot.jp/2012/06/how-to-calculate-record-size-of-hbase.html" target="_blank" rel="external">http://prafull-blog.blogspot.jp/2012/06/how-to-calculate-record-size-of-hbase.html</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/15/Java最佳实践/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/03/15/Java最佳实践/" itemprop="url">
+                  Java最佳实践
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-15T20:31:17+08:00">
+                2017-03-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/03/15/Java最佳实践/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/03/15/Java最佳实践/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>最近又看了下<a href="https://item.jd.com/10058902.html" target="_blank" rel="external">《Effective Java》</a>，书里面分享了作者长期使用Java的一些习惯和高效用法，非常好的一本书，可以看成是Java语言的Best Practices，结合自己的一些经验，我总结了一下平常工作中经常会使用到的内容，并不是很全，后续会慢慢补充更多内容。</p>
+<h3 id="基本规范"><a href="#基本规范" class="headerlink" title="基本规范"></a>基本规范</h3><ol>
+<li>避免未经定义的常量值/字面量出现在代码中，定义为有意义的常量</li>
+<li>尽量使用枚举来替代常量</li>
+<li>避免使用字符串来替代数值类型、枚举类型以及聚集类型</li>
+<li>使用StringBuilder来加速多次的字符串连接操作</li>
+<li>最小化局部变量的作用域</li>
+<li>避免创建不必要的对象，尽量复用重复对象</li>
+</ol>
+<h3 id="分支控制"><a href="#分支控制" class="headerlink" title="分支控制"></a>分支控制</h3><ol>
+<li>避免多行if-else分支</li>
+<li>switch语句必须有default分支</li>
+<li>switch尽量配合枚举类型使用</li>
+<li>避免在if条件判断中使用复杂的逻辑语句，可先定义有意义的变量，然后再使用</li>
+<li>逻辑语句须注意计算优先级，不确定的情况下建议使用括号，提高可读性</li>
+</ol>
+<h3 id="类和接口"><a href="#类和接口" class="headerlink" title="类和接口"></a>类和接口</h3><ol>
+<li>类成员与方法访问控制从严</li>
+<li>所有的覆写方法，必须加@Override注解</li>
+<li>优先使用静态成员类，尽量使用静态成员类替代非静态成员类和局部类</li>
+<li>工具类或单例类应禁止从外部构建对象实例</li>
+<li>通过接口引用对象，而不是直接使用对象</li>
+</ol>
+<h3 id="Object方法"><a href="#Object方法" class="headerlink" title="Object方法"></a>Object方法</h3><ol>
+<li>杜绝使用finalize方法，可以使用try-catch替代</li>
+<li>避免使用clone方法，可以使用拷贝构造器替代</li>
+<li>使用常量或确定有值的对象来调用equals方法，避免空指针异常</li>
+<li>只要重写equals方法，就必须重写hashCode方法</li>
+<li>自定义对象用于Set或Map的键，必须重写hashCode方法和equals方法</li>
+<li>自定义对象的hashCode推荐算法<ul>
+<li>初始化int变量result为非零常数，比如17</li>
+<li>对于对象中的每个关键域，计算散列码c</li>
+<li>迭代更新<code>result = 31 * result + c</code></li>
+<li>返回result</li>
+</ul>
+</li>
+</ol>
+<h3 id="Collection集合"><a href="#Collection集合" class="headerlink" title="Collection集合"></a>Collection集合</h3><ol>
+<li>集合初始化时，尽量指定集合初始值大小</li>
+<li>优先使用foreach遍历集合</li>
+<li>使用entrySet而不是keySet方式遍历Map类集合KV</li>
+<li>返回零长度的数组或者集合</li>
+<li>使用集合转数组的方法，必须使用集合的<code>toArray(T[] array)</code>，传入的是类型完全一样的数组，大小就是<code>list.size()</code></li>
+<li>集合泛型方法尽量使用PECS(Producer Extends Consumer Super)原则</li>
+</ol>
+<h3 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h3><ol>
+<li>创建线程或线程池时，必须指定有意义的线程名称</li>
+<li>线程资源必须通过线程池提供，尽量避免在应用中自行显式创建线程</li>
+<li>避免使用wait和notify方法，优先使用上层并发工具和并发库</li>
+<li>使用双重检查锁模式需要慎重</li>
+<li>并发场景下须注意使用的第三方库是否线程安全</li>
+</ol>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ol>
+<li>单例模式推荐使用惰性初始化模式</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Foo</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">HelperHolder</span> </span>&#123;</span><br><span class="line">       <span class="keyword">public</span> <span class="keyword">static</span> Helper helper = <span class="keyword">new</span> Helper();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Helper <span class="title">getHelper</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> HelperHolder.helper;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>参考文献：</p>
+<ul>
+<li><a href="https://item.jd.com/10058902.html" target="_blank" rel="external">《Effective Java》</a> </li>
+<li><a href="http://www.infoq.com/cn/minibooks/Alibaba-Java-minibook" target="_blank" rel="external">《阿里巴巴 Java 开发手册》</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/02/《深入理解Java虚拟机》之执行引擎/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -905,7 +1735,7 @@
 </li>
 </ol>
 <h3 id="Class类文件结构"><a href="#Class类文件结构" class="headerlink" title="Class类文件结构"></a>Class类文件结构</h3><ol>
-<li>任何一个Class文件都对应唯一一个类或接口的定义，反过来不一定成立，并非一定要以文件形式存在，单需要满足文件格式</li>
+<li>任何一个Class文件都对应唯一一个类或接口的定义，反过来不一定成立，并非一定要以文件形式存在，只需要满足文件格式</li>
 <li>Class文件是一组以8位字节为基础单位的二进制流，各数据项严格按照顺序紧密排列，中间没有任何分隔符，如需要存储超过8位字节的数据项，会分成多个8位字节进行存储</li>
 <li>Class文件采用伪结构体来存储数据，只有无符号数和表两种数据类型<ul>
 <li>无符号数属于基本数据类型，包括u1、u2、u4、u8，分别表示1、2、4、8个字节的无符号数，用来描述数字、索引引用、数量值或者UTF8编码的字符串值</li>
@@ -1210,7 +2040,7 @@
 </ul>
 </li>
 <li>问题二：如何进入GC？<ul>
-<li>不可能为每条导致引用关系变化的指令都生成OopMap，也不需要每天指令都进入GC</li>
+<li>不可能为每条导致引用关系变化的指令都生成OopMap，也不需要每条指令都进入GC</li>
 <li>安全点：只有特点的位置才能停下来执行GC，按照“是否具有让程序长时间执行的特征”来选定，“长时间执行”最明显的特征是指令序列复用，例如方法调用、循环跳转、异常跳转等</li>
 <li>多线程的问题：需要所有线程都走到安全点，采用主动式中断，设置标志位，各线程执行时主动轮询，轮询标志的地方和安全点重合，轮询发现为真就自己中断</li>
 </ul>
@@ -1665,9 +2495,8 @@
 <li>当前线程执行到的位置</li>
 <li>如果是Java方法，则为字节码指令地址；</li>
 <li>如果是Native方法，为Undefined，唯一一个JVM没有规定任何OutOfMemoryError情况的区域。</li>
-<li><font color="red">问题：Native方法是如何执行的？</font>
-
-</li>
+<li><font color="red">问题：Native方法是如何执行的？</font></li>
+<li><a href="https://www.zhihu.com/question/40598119" target="_blank" rel="external">可参考</a></li>
 </ul>
 <h3 id="Java虚拟机栈"><a href="#Java虚拟机栈" class="headerlink" title="Java虚拟机栈"></a>Java虚拟机栈</h3><ul>
 <li>线程私有</li>
@@ -1758,793 +2587,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/06/关于一个赌博游戏的思考/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2017/02/06/关于一个赌博游戏的思考/" itemprop="url">
-                  关于一个赌博游戏的思考
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-02-06T16:31:16+08:00">
-                2017-02-06
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/数学/" itemprop="url" rel="index">
-                    <span itemprop="name">数学</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2017/02/06/关于一个赌博游戏的思考/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/02/06/关于一个赌博游戏的思考/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>春节回家见到的一种新的赌博方式（不得不说湖北人确实喜欢赌博），规则如下: </p>
-<blockquote>
-<p>一副扑克牌去掉大小王剩下52张，洗好牌后每次从牌堆里面按顺序取两张，计算两张牌的点数之和（J、Q、K分布表示11、12和13），猜单双。取出的牌使用完成后，不会马上进入牌堆，最后剩下的6张牌作废（避免有人记住最后剩下的牌），重新洗牌开始进行新的一轮活动。</p>
-</blockquote>
-<h2 id="动手实践"><a href="#动手实践" class="headerlink" title="动手实践"></a>动手实践</h2><p>了解规则之后，我直觉出现单和双的概率是不均等的，至少在牌局的末尾，是可以根据之前出现的牌的情况制定某种策略，提高猜中概率的。粗略一想，最终结果为单的情况包括：先单后双/先双后单，为双的情况包括：两个双/两个单。如果不考虑一副牌里面单数牌比较多（多4张）的情况，似乎可以认为这个活动出现单双的概率是均等的。但是，事实是否确实如此呢？</p>
-<p>回来后写了个程序来模拟这个过程，想通过统计信息来观察概率是否均等，代码如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">public class Gambling &#123;</span><br><span class="line">    private int num;        // 数字个数，一副完整的扑克牌num=13</span><br><span class="line">    private int multiple;   // 每种数字个数，一副完整的扑克牌有4种花色</span><br><span class="line">    private int left;       // 最后的几张牌废弃掉</span><br><span class="line">    private int start;      // 统计的起始位置</span><br><span class="line">    private List&lt;Integer&gt; cards;</span><br><span class="line"></span><br><span class="line">    public Gambling(int num, int multiple, int left, int start) &#123;</span><br><span class="line">        this.num = num;</span><br><span class="line">        this.multiple = multiple;</span><br><span class="line">        this.left = left;</span><br><span class="line">        this.start = start;</span><br><span class="line"></span><br><span class="line">        cards = new ArrayList&lt;Integer&gt;(num * multiple);</span><br><span class="line">        for (int i = 0; i &lt; num * multiple; i++) &#123;</span><br><span class="line">            cards.add(i / multiple + 1);</span><br><span class="line">        &#125;</span><br><span class="line">        // System.out.println(&quot;arrays: &quot; + cards);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void sample(int times) &#123;</span><br><span class="line">        int totalOddNum = 0, totalEvenNum = 0;</span><br><span class="line">        for (int i = 0; i &lt; times; i++) &#123;</span><br><span class="line">            Random rnd = new Random(System.currentTimeMillis());</span><br><span class="line">            Collections.shuffle(cards, rnd);</span><br><span class="line"></span><br><span class="line">            int oddNum = 0, evenNum = 0;</span><br><span class="line">            for (int j = start; j &lt; (num * multiple - left) / 2; j++) &#123;</span><br><span class="line">                int value = cards.get(j * 2) + cards.get(j * 2 + 1);</span><br><span class="line">                if (value % 2 == 0) &#123;</span><br><span class="line">                    evenNum++;</span><br><span class="line">                    totalEvenNum++;</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    oddNum++;</span><br><span class="line">                    totalOddNum++;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            int total = oddNum + evenNum;</span><br><span class="line">            if (i &lt; 5) &#123;</span><br><span class="line">                System.out.println(String.format(&quot;#%d: oddRate = %.3f, evenRate = %.3f&quot;,</span><br><span class="line">                        i, oddNum * 1.0 / total, evenNum * 1.0 / total));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        int totalNum = totalOddNum + totalEvenNum;</span><br><span class="line">        System.out.println(String.format(&quot;total(%d): totalOddRate = %.5f, totalEvenRate = %.5f&quot;,</span><br><span class="line">                totalNum, totalOddNum * 1.0 / totalNum, totalEvenNum * 1.0 / totalNum));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Gambling gambling = new Gambling(13, 4, 6, 0);</span><br><span class="line">        gambling.sample(1000000);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>运行多次的结果如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">total(23000000): totalOddRate = 0.50739, totalEvenRate = 0.49261</span><br><span class="line">total(23000000): totalOddRate = 0.50695, totalEvenRate = 0.49305</span><br><span class="line">total(23000000): totalOddRate = 0.50724, totalEvenRate = 0.49276</span><br><span class="line">total(23000000): totalOddRate = 0.50651, totalEvenRate = 0.49349</span><br><span class="line">total(23000000): totalOddRate = 0.50629, totalEvenRate = 0.49371</span><br></pre></td></tr></table></figure>
-<p>从结果中可以清楚的看到，出现单的概率比出现双的概率高1.4%，结果非常稳定。这说明游戏中出现单双的概率是不均等的，看到这样的结果，我第一反应是：会不会是单数牌多4张造成的？立即将程序中的num从13改成12，再次运行发现：<font color="red">出现单的概率比出现双的概率高了约2%</font>，比之前的结果更不均衡了。</p>
-<h2 id="一点想法"><a href="#一点想法" class="headerlink" title="一点想法"></a>一点想法</h2><p>为什么会出现这样的情况？我回到数学论证上来考虑一个简单的例子：简化一副扑克，考虑只有4张牌的情况，2种花色和2种数字，排列的情况如下（不考虑花色的情况）：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1、1、2、2</span><br><span class="line">1、2、1、2</span><br><span class="line">1、2、2、1</span><br><span class="line">2、1、1、2</span><br><span class="line">2、1、2、1</span><br><span class="line">2、2、1、1</span><br></pre></td></tr></table></figure>
-<p>不考虑最后牌作废的情况，一共可以进行12次赌博活动，其中出现单的次数为8，出现双的次数为4，并不是直观上的机会均等。在这个极端的例子里面，最终结果出现双的条件相对比较苛刻，要求相邻的数字相同才行，第一个数字与第二个数字相同的概率为1/3，不同的概率为2/3，导致出现单的概率偏高。如果数字种数更多，情况应该会更好一些。通过运行下面的代码，验证了我们的想法。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">for (int i = 1; i &lt; 7; i++) &#123;</span><br><span class="line">    Gambling gambling2 = new Gambling(i * 2, 2, 0, 0);</span><br><span class="line">    gambling2.sample(1000000);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Results:</span><br><span class="line">total(2000000): totalOddRate = 0.66579, totalEvenRate = 0.33421</span><br><span class="line">total(4000000): totalOddRate = 0.55100, totalEvenRate = 0.44900</span><br><span class="line">total(6000000): totalOddRate = 0.54564, totalEvenRate = 0.45436</span><br><span class="line">total(8000000): totalOddRate = 0.53384, totalEvenRate = 0.46616</span><br><span class="line">total(10000000): totalOddRate = 0.52858, totalEvenRate = 0.47142</span><br><span class="line">total(12000000): totalOddRate = 0.51977, totalEvenRate = 0.48023</span><br></pre></td></tr></table></figure>
-<p>上面的程序避免了单数牌和双数牌数目不一致的情况，更多的牌引入了更多的配对可能性，使得结果趋于均衡。如果考虑正常扑克的行为，会发现当单数牌多一种时，会导致出现双的概率增大。换句话说，13种牌单双概率的差异要比12和14种牌都要小。</p>
-<p>事实上按照排列组合的分析，应该是可以得到准确的结果，一个直观的解释是：奇偶性不同的牌组合才能得到单数的结果，当单数牌比较多的时候，奇偶性不同的牌组合之后，多出的牌结果肯定是双，这一事实导致了单双概率差距缩小，使得整个游戏更为公平。对于单数牌和双数牌相同的情况，似乎也可以用上面的简化case来解释。</p>
-<h2 id="赢钱策略"><a href="#赢钱策略" class="headerlink" title="赢钱策略"></a>赢钱策略</h2><p>根据上面的分析发现：出现单的概率要高，那押单是个不错的选择。如果根据一副牌已经出现的结果，来制定后面的押注策略，感觉应该还有更好的赢钱策略。这个留到回头在研究。</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/06/15/Go语言圣经读后感/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2016/06/15/Go语言圣经读后感/" itemprop="url">
-                  Go语言圣经读后感
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-06-15T12:07:48+08:00">
-                2016-06-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/技术/" itemprop="url" rel="index">
-                    <span itemprop="name">技术</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2016/06/15/Go语言圣经读后感/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/06/15/Go语言圣经读后感/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>最近读了下<a href="http://www.gopl.io/" target="_blank" rel="external">《The Go Programming Language》</a>，网上没有找到完整的英文版，可以找到翻译的<a href="https://docs.ruanjiadeng.com/gopl-zh/index.html" target="_blank" rel="external">中文版</a>，中文版翻译得比较一般，有较多的打印和翻译错误。由于之前对Go语言有一定的了解，因此中文版看起来也没什么问题。个人觉得该书算是不错的Go语言入门书了，不管是从行文方式（用例实用且详细，同时由浅入深）还是阐述深度等方面来看，都比之前看的那本要强一些，本人从中获益良多，因此行文总结一下。</p>
-<h2 id="Programming-Language"><a href="#Programming-Language" class="headerlink" title="Programming Language"></a>Programming Language</h2><h3 id="无类型常量"><a href="#无类型常量" class="headerlink" title="无类型常量"></a>无类型常量</h3><p>许多常量并没有一个明确的基础类型，编译器为这些没有明确基础类型的数字常量提供比基础类型更高精度的算术运算，你可以认为至少有256bit的运算精度。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">const a = 1208925819614629174706176</span><br><span class="line">fmt.Println(a / 1180591620717411303424)     // ouput 1024</span><br><span class="line">// fmt.Println(a)   // error: constant 1208925819614629174706176 overflows int</span><br><span class="line"></span><br><span class="line">var f float64 = 3 + 0i</span><br><span class="line">fmt.Println(f)  // output 3</span><br></pre></td></tr></table></figure>
-<p>只有常量可以是无类型的。当一个无类型的常量被赋值给一个变量的时候，无类型的常量将会被隐式转换为对应的类型，如果转换合法的话。</p>
-<h3 id="包的初始化"><a href="#包的初始化" class="headerlink" title="包的初始化"></a>包的初始化</h3><ol>
-<li>包的初始化首先是解决包级变量的依赖顺序，然后安照包级变量声明出现的顺序依次初始化。</li>
-<li>每个包在解决依赖的前提下，以导入声明的顺序初始化，每个包只会被初始化一次。因此，如果一个p包导入了q包，那么在p包初始化的时候可以认为q包必然已经初始化过了。初始化工作是自下而上进行的，main包最后被初始化。以这种方式，可以确保在main函数执行之前，所有依然的包都已经完成初始化工作了。</li>
-</ol>
-<h2 id="Programming-Pitfall"><a href="#Programming-Pitfall" class="headerlink" title="Programming Pitfall"></a>Programming Pitfall</h2><h3 id="迭代变量"><a href="#迭代变量" class="headerlink" title="迭代变量"></a>迭代变量</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">错误方式：可能会一直输出最后一个元素</span><br><span class="line">for val := range values &#123;</span><br><span class="line">    go func() &#123;</span><br><span class="line">        fmt.Println(val)</span><br><span class="line">    &#125;()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">正确方式：</span><br><span class="line">for val := range values &#123;</span><br><span class="line">    go func(val interface&#123;&#125;) &#123;</span><br><span class="line">        fmt.Println(val)</span><br><span class="line">    &#125;(val)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="内存同步"><a href="#内存同步" class="headerlink" title="内存同步"></a>内存同步</h3><p>下面的代码段可能输出如下结果：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x:0 y:0</span><br><span class="line">y:0 x:0</span><br></pre></td></tr></table></figure>
-<p>解释：在一个独立的goroutine中，每一个语句的执行顺序是可以被保证的；也就是说goroutine是顺序连贯的。但是在不使用channel且不使用mutex这样的显式同步操作时，我们就没法保证事件在不同的goroutine中看到的执行顺序是一致的了。尽管goroutine A中一定需要观察到x=1执行成功之后才会去读取y，但它没法确保自己观察得到goroutine B中对y的写入，所以A还可能会打印出y的一个旧版的值。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">var x, y int</span><br><span class="line"></span><br><span class="line">go func() &#123;</span><br><span class="line">    x = 1 // A1</span><br><span class="line">    fmt.Print(&quot;y:&quot;, y, &quot; &quot;) // A2</span><br><span class="line">&#125;()</span><br><span class="line"></span><br><span class="line">go func() &#123;</span><br><span class="line">    y = 1                   // B1</span><br><span class="line">    fmt.Print(&quot;x:&quot;, x, &quot; &quot;) // B2</span><br><span class="line">&#125;()</span><br></pre></td></tr></table></figure>
-<h2 id="Programming-Pattern"><a href="#Programming-Pattern" class="headerlink" title="Programming Pattern"></a>Programming Pattern</h2><h3 id="计算函数运行时间"><a href="#计算函数运行时间" class="headerlink" title="计算函数运行时间"></a>计算函数运行时间</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">func bigSlowOperation() &#123;</span><br><span class="line">    defer trace(&quot;bigSlowOperation&quot;)() // don&apos;t forget the extra parentheses</span><br><span class="line">    // ...lots of work…</span><br><span class="line">    time.Sleep(10 * time.Second) // simulate slow operation by sleeping</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func trace(msg string) func() &#123;</span><br><span class="line">    start := time.Now()</span><br><span class="line">    log.Printf(&quot;enter %s&quot;, msg)</span><br><span class="line">    return func() &#123; </span><br><span class="line">        log.Printf(&quot;exit %s (%s)&quot;, msg,time.Since(start)) </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="使用锁进行并发"><a href="#使用锁进行并发" class="headerlink" title="使用锁进行并发"></a>使用锁进行并发</h3><p>传统的并发做法，使用锁来避免竞争条件。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">var (</span><br><span class="line">    mu      sync.Mutex // guards balance</span><br><span class="line">    balance int</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func Deposit(amount int) &#123;</span><br><span class="line">    mu.Lock()</span><br><span class="line">    defer mu.Unlock()</span><br><span class="line">    balance = balance + amount</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func Balance() int &#123;</span><br><span class="line">    mu.Lock()</span><br><span class="line">    defer mu.Unlock()</span><br><span class="line">    return balance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="使用通信进行并发"><a href="#使用通信进行并发" class="headerlink" title="使用通信进行并发"></a>使用通信进行并发</h3><p>Go推荐的做法：不要使用共享数据来通信；使用通信来共享数据。一个提供对指定变量通过cahnnel来请求的goroutine叫做这个变量的监控(monitor)goroutine，只有一个goroutine能够访问变量。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">var deposits = make(chan int) // send amount to deposit</span><br><span class="line">var balances = make(chan int) // receive balance</span><br><span class="line"></span><br><span class="line">func Deposit(amount int) &#123; deposits &lt;- amount &#125;</span><br><span class="line">func Balance() int       &#123; return &lt;-balances &#125;</span><br><span class="line"></span><br><span class="line">func teller() &#123;</span><br><span class="line">    var balance int // balance is confined to teller goroutine</span><br><span class="line">    for &#123;</span><br><span class="line">        select &#123;</span><br><span class="line">        case amount := &lt;-deposits:</span><br><span class="line">            balance += amount</span><br><span class="line">        case balances &lt;- balance:</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func init() &#123;</span><br><span class="line">    go teller() // start the monitor goroutine</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="广播机制"><a href="#广播机制" class="headerlink" title="广播机制"></a>广播机制</h3><p>关闭同步channel可以让所有等待该channel的goroutine都收到信息。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">type entry struct &#123;</span><br><span class="line">    res   result</span><br><span class="line">    ready chan struct&#123;&#125; // closed when res is ready</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func New(f Func) *Memo &#123;</span><br><span class="line">    return &amp;Memo&#123;f: f, cache: make(map[string]*entry)&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type Memo struct &#123;</span><br><span class="line">    f     Func</span><br><span class="line">    mu    sync.Mutex // guards cache</span><br><span class="line">    cache map[string]*entry</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (memo *Memo) Get(key string) (value interface&#123;&#125;, err error) &#123;</span><br><span class="line">    memo.mu.Lock()</span><br><span class="line">    e := memo.cache[key]</span><br><span class="line">    if e == nil &#123;</span><br><span class="line">        // This is the first request for this key.</span><br><span class="line">        // This goroutine becomes responsible for computing</span><br><span class="line">        // the value and broadcasting the ready condition.</span><br><span class="line">        e = &amp;entry&#123;ready: make(chan struct&#123;&#125;)&#125;</span><br><span class="line">        memo.cache[key] = e</span><br><span class="line">        memo.mu.Unlock()</span><br><span class="line"></span><br><span class="line">        e.res.value, e.res.err = memo.f(key)</span><br><span class="line"></span><br><span class="line">        close(e.ready) // broadcast ready condition</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // This is a repeat request for this key.</span><br><span class="line">        memo.mu.Unlock()</span><br><span class="line"></span><br><span class="line">        &lt;-e.ready // wait for ready condition</span><br><span class="line">    &#125;</span><br><span class="line">    return e.res.value, e.res.err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/16/红黑树/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2016/05/16/红黑树/" itemprop="url">
-                  红黑树
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-16T10:24:31+08:00">
-                2016-05-16
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/技术/" itemprop="url" rel="index">
-                    <span itemprop="name">技术</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2016/05/16/红黑树/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/05/16/红黑树/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>最近在复习数据结构，打算用Go语言实现一下常用的数据结构，所以就有了这篇文章，维基百科上关于红黑树的基本描述如下：</p>
-<blockquote>
-<p>红黑树（英语：Red–black tree）是一种自平衡二叉查找树，可以在O(log n)时间内做查找，插入和删除。</p>
-</blockquote>
-<h2 id="性质"><a href="#性质" class="headerlink" title="性质"></a>性质</h2><p>红黑树是每个节点都带有颜色属性的二叉查找树，颜色为红色或黑色。在二叉查找树强制一般要求以外，对于任何有效的红黑树我们增加了如下的额外要求：   </p>
-<ol>
-<li>节点是红色或黑色。</li>
-<li>根是黑色。</li>
-<li>所有叶子都是黑色（叶子是NIL节点，这个特性在插入里面用不到，在节点删除里面起作用）。</li>
-<li>每个红色节点必须有两个黑色的子节点。（从每个叶子到根的所有路径上不能有两个连续的红色节点。）</li>
-<li>从任一节点到其每个叶子的所有简单路径都包含相同数目的黑色节点。</li>
-</ol>
-<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rbtree.png" width="500" height="300" alt="红黑树示例图" style="clear: both; display: block; margin:auto; "></p>
-<p>这些约束确保了红黑树的关键特性：从根到叶子的最长的可能路径不多于最短的可能路径的两倍长。结果是这个树大致上是平衡的。因为操作比如插入、删除和查找某个值的最坏情况时间都要求与树的高度成比例，这个在高度上的理论上限允许红黑树在最坏情况下都是高效的，而不同于普通的二叉查找树。</p>
-<p>要知道为什么这些性质确保了这个结果，注意到性质4导致了路径不能有两个毗连的红色节点就足够了。最短的可能路径都是黑色节点，最长的可能路径有交替的红色和黑色节点。因为根据性质5所有最长的路径都有相同数目的黑色节点，这就表明了没有路径能多于任何其他路径的两倍长。</p>
-<h2 id="实现准备"><a href="#实现准备" class="headerlink" title="实现准备"></a>实现准备</h2><p><strong>基本定义</strong>，包括节点和树的定义：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">const (</span><br><span class="line">    RED   bool = true</span><br><span class="line">    BLACK bool = false</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">type RBNode struct &#123;</span><br><span class="line">    value               int64</span><br><span class="line">    color               bool</span><br><span class="line">    left, right, parent *RBNode</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type RBTree struct &#123;</span><br><span class="line">    root *RBNode</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>基本操作</strong>，包括左旋和右旋：</p>
-<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/left_rotate.jpg" width="400" height="150" alt="左旋示例图" style="clear: both; display: block; margin:auto; "></p>
-<p><strong>左旋</strong>：以P为轴心左旋，左旋必须要有右子节点，右子节点N成为P的父亲，N的左子节点成为P的右子节点</p>
-<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/right_rotate.jpg" width="400" height="160" alt="右旋示例图" style="clear: both; display: block; margin:auto; "></p>
-<p><strong>右旋</strong>：以P为轴心右旋，右旋必须要有左子节点，左子节点N成为P的父亲，N的右子节点成为P的左子节点</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">// 只贴左旋的代码，右旋完全类似</span><br><span class="line">// 注意：如果树的root可能发生变化，需要返回旋转后的父亲节点</span><br><span class="line">func (self *RBNode) leftRotate() (*RBNode, error) &#123;</span><br><span class="line">    var root *RBNode</span><br><span class="line">    if self == nil &#123;</span><br><span class="line">        return root, nil</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    parent := self.parent</span><br><span class="line">    rightChild := self.right</span><br><span class="line">    if rightChild == nil &#123;</span><br><span class="line">        return root, errors.New(&quot;left rotate node without right child&quot;)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // rotate</span><br><span class="line">    rightChildLeft := rightChild.left</span><br><span class="line">    rightChild.left = self</span><br><span class="line">    self.parent = rightChild</span><br><span class="line">    self.right = rightChildLeft</span><br><span class="line">    if rightChildLeft != nil &#123;</span><br><span class="line">        rightChildLeft.parent = self</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if parent == nil &#123;</span><br><span class="line">        root = rightChild</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // 判断左右</span><br><span class="line">        if parent.left == self &#123;</span><br><span class="line">            parent.left = rightChild</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            parent.right = rightChild</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    rightChild.parent = parent</span><br><span class="line"></span><br><span class="line">    return root, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h2><p>二叉搜索树插入的节点一定是叶子节点，因此考虑性质5，则插入节点只能是红色的。首先实现二叉搜索树的插入：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">// 插入，二叉搜索树的插入方法，插入成功之后进行调整</span><br><span class="line">func (self *RBTree) insertNode(node *RBNode, data int64) &#123;</span><br><span class="line">    if node.value &gt;= data &#123;</span><br><span class="line">        if node.left == nil &#123;</span><br><span class="line">            tmp := NewRBNode(data)</span><br><span class="line">            tmp.parent = node</span><br><span class="line">            node.left = tmp</span><br><span class="line">            self.adjust(tmp)</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            self.insertNode(node.left, data)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        if node.right == nil &#123;</span><br><span class="line">            tmp := NewRBNode(data)</span><br><span class="line">            tmp.parent = node</span><br><span class="line">            node.right = tmp</span><br><span class="line">            self.adjust(tmp)</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            self.insertNode(node.right, data)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>红黑树的调整分5种情况，实际上是7种情况，不过有两种情况是对称的，有的情况需要递归到其他情况：</p>
-<p><strong>情形1</strong>: 新节点N位于树的根上，没有父节点</p>
-<ul>
-<li>在这种情形下（其他情况递归也可能到这种情况），我们把它重绘为黑色以满足性质2。因为它在每个路径上对黑节点数目增加一，性质5符合。</li>
-</ul>
-<p><strong>情形2</strong>: 新节点的父节点P是黑色</p>
-<ul>
-<li>性质4没有失效（新节点是红色的）。</li>
-<li>在这种情形下，树仍是有效的。性质5也未受到威胁，尽管新节点N有两个黑色叶子子节点；但由于新节点N是红色，通过它的每个子节点的路径就都有同通过它所取代的黑色的叶子的路径同样数目的黑色节点，所以依然满足这个性质。</li>
-</ul>
-<p><strong>情形3</strong>: 如果父节点P和叔父节点U二者都是红色</p>
-<ul>
-<li>此时新插入节点N做为P的左子节点或右子节点都属于情形3，这里右图仅显示N做为P左子的情形，则我们可以将它们两个重绘为黑色并重绘祖父节点G为红色（用来保持性质5）。</li>
-<li>现在我们的新节点N有了一个黑色的父节点P。因为通过父节点P或叔父节点U的任何路径都必定通过祖父节点G，在这些路径上的黑节点数目没有改变。</li>
-<li>但是，红色的祖父节点G可能是根节点，这就违反了性质2，也有可能祖父节点G的父节点是红色的，这就违反了性质4。为了解决这个问题，我们在祖父节点G上递归地进行情形1的整个过程。（把G当成是新加入的节点进行各种情形的检查）</li>
-</ul>
-<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_3.png" width="400" height="150" alt="情形3" style="clear: both; display: block; margin:auto; "></p>
-<p><strong>情形4</strong>: 父节点P是红色而叔父节点U是黑色或缺少，并且新节点N是其父节点P的右子节点而父节点P又是其父节点的左子节点，简称为“左右”</p>
-<ul>
-<li>在这种情形下，我们进行一次左旋转调换新节点和其父节点的角色;</li>
-<li>接着，我们按情形5处理以前的父节点P以解决仍然失效的性质4。注意这个改变会导致某些路径通过它们以前不通过的新节点N（比如图中1号叶子节点）或不通过节点P（比如图中3号叶子节点），但由于这两个节点都是红色的，所以性质5仍有效。</li>
-</ul>
-<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_4.png" width="400" height="150" alt="情形4" style="clear: both; display: block; margin:auto; "></p>
-<p><strong>情形5</strong>: 父节点P是红色而叔父节点U是黑色或缺少，新节点N是其父节点的左子节点，而父节点P又是其父节点G的左子节点。简称为“左左”</p>
-<ul>
-<li>在这种情形下，我们进行针对祖父节点G的一次右旋转；在旋转产生的树中，以前的父节点P现在是新节点N和以前的祖父节点G的父节点。我们知道以前的祖父节点G是黑色，否则父节点P就不可能是红色（如果P和G都是红色就违反了性质4，所以G必须是黑色）。我们切换以前的父节点P和祖父节点G的颜色，结果的树满足性质4。性质5也仍然保持满足，因为通过这三个节点中任何一个的所有路径以前都通过祖父节点G，现在它们都通过以前的父节点P。在各自的情形下，这都是三个节点中唯一的黑色节点。</li>
-</ul>
-<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/rbtree/rb_tree_insert_case_5.png" width="400" height="150" alt="情形5" style="clear: both; display: block; margin:auto; "></p>
-<p><strong>调整代码如下</strong>：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">func (self *RBTree) adjust(node *RBNode) &#123;</span><br><span class="line">    parent := node.parent</span><br><span class="line">    if parent == nil &#123;</span><br><span class="line">        // 情形1：（递归后）新节点位于树的根上</span><br><span class="line">        node.color = BLACK</span><br><span class="line">        self.root = node</span><br><span class="line">        return</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if parent.color == BLACK &#123;</span><br><span class="line">        // 情形2：新节点的父节点P是黑色，性质不失效</span><br><span class="line">        return</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        uncle := node.getUncle()</span><br><span class="line">        grandParent := node.getGrandParent()</span><br><span class="line">        if uncle != nil &amp;&amp; uncle.color == RED &#123;</span><br><span class="line">            // 情形3：父节点和叔父节点均为红色</span><br><span class="line">            // 处理：父节点和叔父节点转为黑色，祖父节点改成红色，递归处理祖父节点</span><br><span class="line">            node.parent.color = BLACK</span><br><span class="line">            uncle.color = BLACK</span><br><span class="line">            grandParent.color = RED</span><br><span class="line">            self.adjust(grandParent)</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            isLeft := (node == parent.left)</span><br><span class="line">            isParentLeft := (node.parent == grandParent.left)</span><br><span class="line">            if isLeft &amp;&amp; isParentLeft &#123;</span><br><span class="line">                // 情形5：左左</span><br><span class="line">                // 处理：祖父节点右旋</span><br><span class="line">                node.parent.color = BLACK</span><br><span class="line">                grandParent.color = RED</span><br><span class="line">                self.rotateRight(grandParent)</span><br><span class="line">            &#125; else if !isLeft &amp;&amp; isParentLeft &#123;</span><br><span class="line">                // 情形4：左右</span><br><span class="line">                // 处理：父节点左旋，变成情形4左左</span><br><span class="line">                self.rotateLeft(node.parent)</span><br><span class="line">                // 现在的node.parent表示原来的祖父节点</span><br><span class="line">                self.rotateRight(node.parent)</span><br><span class="line"></span><br><span class="line">                node.color = BLACK</span><br><span class="line">                node.left.color = RED</span><br><span class="line">                node.right.color = RED</span><br><span class="line">            &#125; else if isLeft &amp;&amp; !isParentLeft &#123;</span><br><span class="line">                // 情形4对称：右左</span><br><span class="line">                self.rotateRight(node.parent)</span><br><span class="line">                self.rotateLeft(node.parent)</span><br><span class="line"></span><br><span class="line">                node.color = BLACK</span><br><span class="line">                node.left.color = RED</span><br><span class="line">                node.right.color = RED</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                // 情形5对称：右右</span><br><span class="line">                node.parent.color = BLACK</span><br><span class="line">                grandParent.color = RED</span><br><span class="line">                self.rotateLeft(grandParent)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h2><p>暂时没有实现删除，后续有时间会加上</p>
-<p>参考文献：</p>
-<ul>
-<li><a href="https://zh.wikipedia.org/wiki/%E7%BA%A2%E9%BB%91%E6%A0%91" target="_blank" rel="external">维基百科</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/04/01/Http-Header详解/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2016/04/01/Http-Header详解/" itemprop="url">
-                  Http Header详解
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-04-01T11:07:10+08:00">
-                2016-04-01
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/技术/" itemprop="url" rel="index">
-                    <span itemprop="name">技术</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2016/04/01/Http-Header详解/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/04/01/Http-Header详解/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="Http-Request"><a href="#Http-Request" class="headerlink" title="Http Request"></a>Http Request</h1><h2 id="Accept类"><a href="#Accept类" class="headerlink" title="Accept类"></a>Accept类</h2><ul>
-<li>Accept：客户端接受什么样的类型<ul>
-<li><code>*/*</code>表示任何类型，<code>text/*</code>表示text类型下的所有子类型，<code>text/plain</code>和<code>text/html</code>表示具体类型</li>
-</ul>
-</li>
-<li>Accept-Charset： 客户端申明自己接收的字符集 </li>
-<li>Accept-Encoding： 客户端申明自己接收的编码方法<ul>
-<li>通常指定压缩方法，是否支持压缩，支持什么压缩方法（gzip，deflate） </li>
-</ul>
-</li>
-<li>Accept-Language：客户端申明自己接收的语言 <ul>
-<li>语言跟字符集的区别：中文zh是语言，中文有多种字符集，比如big5，gb2312，gbk等等</li>
-</ul>
-</li>
-</ul>
-<h2 id="Cache相关"><a href="#Cache相关" class="headerlink" title="Cache相关"></a>Cache相关</h2><ul>
-<li>Cache-Control：<ul>
-<li>no-cache：不要缓存的实体，要求现在从服务器去取</li>
-<li>max-age：只接受Age值小于max-age值，并且没有过期的对象</li>
-<li>max-stale：可以接受过去的对象，但是过期时间必须小于max-stale值 </li>
-<li>min-fresh：接受其新鲜生命期大于其当前Age跟min-fresh值之和的缓存对象</li>
-</ul>
-</li>
-<li>Pramga：<ul>
-<li>主要使用<code>Pramga: no-cache</code>，相当于<code>Cache-Control：no-cache</code></li>
-</ul>
-</li>
-</ul>
-<h2 id="Conditional类"><a href="#Conditional类" class="headerlink" title="Conditional类"></a>Conditional类</h2><ul>
-<li>If-Modified-Since和If-None-Match：<ul>
-<li>两者均表示允许在对应的内容未被修改的情况下返回304未修改，用于validate cache with server</li>
-<li>区别在于前者配合Last-Modified使用，后者配合ETag使用</li>
-</ul>
-</li>
-<li>If-Unmodified-Since和If-Match<ul>
-<li>两者均表示仅当该实体自某个特定时间已来未被修改的情况下，才进行对应的操作。主要用于更新操作，比如像PUT这样的方法，仅当从用户上次更新某个资源以来，该资源未被修改的情况下，才更新该资源</li>
-<li>区别在于前者配合Last-Modified使用，后者配合ETag使用</li>
-</ul>
-</li>
-</ul>
-<h2 id="其他重要的"><a href="#其他重要的" class="headerlink" title="其他重要的"></a>其他重要的</h2><ul>
-<li>Connection：<ul>
-<li>close：告诉WEB服务器或者代理服务器，在完成本次请求的响应后，断开连接，不要等待本次连接的后续请求了</li>
-<li>keepalive：告诉WEB服务器或者代理服务器，在完成本次请求的响应后，保持连接，等待本次连接的后续请求 </li>
-</ul>
-</li>
-<li>User-Agent：浏览器表明自己的身份</li>
-<li>Upgrade：要求服务器升级到另一个协议，WebSocket会使用 </li>
-</ul>
-<h1 id="Http-Response"><a href="#Http-Response" class="headerlink" title="Http Response"></a>Http Response</h1><h2 id="Content类"><a href="#Content类" class="headerlink" title="Content类"></a>Content类</h2><ul>
-<li>Content-Encoding：服务器表明自己使用了什么压缩方法（gzip，deflate）压缩响应中的对象。</li>
-<li>Content-Language：服务器告诉浏览器自己响应的对象的语言。</li>
-<li>Content-Length： 服务器告诉浏览器自己响应的对象的长度。</li>
-<li>Content-Range： 服务器表明该响应包含的部分对象为整个对象的哪个部分。</li>
-<li>Content-Type： 服务器告诉浏览器自己响应的对象的类型。例如：Content-Type：application/xml</li>
-<li>Last-Modified：服务器认为对象的最后修改时间，比如文件的最后修改时间，动态页面的最后产生时间等等。</li>
-<li>ETag：对象的标志值，就一个对象而言，比如一个html文件，如果被修改了，其 Etag也会别修改，所以ETag的作用跟Last-Modified的作用差不多，主要供服务器判断一个对象是否改变了。</li>
-<li>Transfer-Encoding：服务器表明自己对本响应消息体（不是消息体里面的对象）作了怎样的编码，比如是否分块（chunked），chunk编码将数据分成一块一块的发生。Chunked编码将使用若干个Chunk串连而成，由一个标明长度为0的chunk标示结束。</li>
-</ul>
-<h2 id="Cache相关-1"><a href="#Cache相关-1" class="headerlink" title="Cache相关"></a>Cache相关</h2><ul>
-<li>Cache-Control：<ul>
-<li>public：可以用Cached内容回应任何用户</li>
-<li>private：只能用缓存内容回应先前请求该内容的那个用户</li>
-<li>no-cache：可以缓存，但是只有在跟服务器验证了其有效后，才能返回给客户端 </li>
-<li>no-store：不允许缓存</li>
-<li>max-age：本响应包含的对象的过期时间</li>
-</ul>
-</li>
-<li>Vary：服务器用该头部的内容告诉Cache服务器（代理服务器或者网关），在什么条件下才能用本响应所返回的对象响应后续的请求。<ul>
-<li>解释：源服务器在接到第一个请求消息时，其响应消息的头部为：Content-Encoding: gzip; Vary: Content-Encoding那么Cache服务器会分析后续请求消息的头部，检查其Accept-Encoding，是否跟先前响应的Vary头部值一致，即是否使用相同的内容编码方法，这样就可以防止Cache服务器用自己Cache里面压缩后的实体响应给不具备解压能力的浏览器。</li>
-</ul>
-</li>
-</ul>
-<h2 id="其他重要的-1"><a href="#其他重要的-1" class="headerlink" title="其他重要的"></a>其他重要的</h2><ul>
-<li>Connection：针对该连接所预期的选项，服务器应该可以修改</li>
-<li>Via： 列出从客户端到OCS或者相反方向的响应经过了哪些代理服务器，他们用什么协议（和版本）发送的请求。<ul>
-<li>解释：当客户端请求到达第一个代理服务器时，该服务器会在自己发出的请求里面添加Via头部，并填上自己的相关信息，当下一个代理服务器收到第一个代理服务器的请求时，会在自己发出的请求里面复制前一个代理服务器的请求的Via头部，并把自己的相关信息加到后面，以此类推，当OCS收到最后一个代理服务器的请求时，检查Via头部，就知道该请求所经过的路由。</li>
-</ul>
-</li>
-<li>Server: 服务器表明自己是什么软件及版本等信息</li>
-</ul>
-<p>参考文献：</p>
-<ul>
-<li><a href="https://en.wikipedia.org/wiki/List_of_HTTP_header_fields" target="_blank" rel="external">List_of_HTTP_header_fields</a></li>
-<li><a href="http://www.cnblogs.com/skynet/archive/2010/12/11/1903347.html" target="_blank" rel="external">HTTP Keep-Alive模式</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2594,7 +2636,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">22</span>
+                <span class="site-state-item-count">26</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -2616,7 +2658,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">16</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -2675,7 +2717,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

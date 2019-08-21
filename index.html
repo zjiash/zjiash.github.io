@@ -273,6 +273,876 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/21/MySQL事务隔离性/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2018/08/21/MySQL事务隔离性/" itemprop="url">
+                  MySQL事务隔离性
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-21T17:57:17+08:00">
+                2018-08-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/08/21/MySQL事务隔离性/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2018/08/21/MySQL事务隔离性/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="事务的四种隔离级别"><a href="#事务的四种隔离级别" class="headerlink" title="事务的四种隔离级别"></a>事务的四种隔离级别</h3><ol>
+<li>READ_UNCOMMITTED：未提交读，在该级别下，事务中的修改，即使没有提交，对其他事务也是可见的。该级别会产生所谓的脏读，导致很多问题；</li>
+<li>READ_COMMITTED：提交读，在该级别下，事务开始后，只能看见已提交的事务所做的修改，如果其他事务在该事务进行过程中提交，则该事务可以看见提交后的修改。该级别也叫不可重复读，因为前后两次同样的查询，可能会得到不一样的结果；Oracle等多数数据库默认的级别。</li>
+<li>REPEATABLE_READ：可重复读，在同一个事务内的查询都是事务开始时刻一致的，InnoDB默认级别。在SQL标准中，该隔离级别消除了不可重复读，但是还存在幻象读。</li>
+<li>SERIALIZABLE：可串行化，该级别通过强制事务串行化执行来保证隔离性，是最高的隔离级别；</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>隔离级别</th>
+<th>脏读(Dirty Read)</th>
+<th>不可重复读(NonRepeatable Read)</th>
+<th>幻读(Phantom Read)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>未提交读(Read Uncommitted)</td>
+<td>可能</td>
+<td>可能</td>
+<td>可能</td>
+</tr>
+<tr>
+<td>已提交读(Read Committed)</td>
+<td>不可能</td>
+<td>可能</td>
+<td>可能</td>
+</tr>
+<tr>
+<td>可重复读(Repeatable Read)</td>
+<td>不可能</td>
+<td>不可能</td>
+<td>可能</td>
+</tr>
+<tr>
+<td>可串行化(Serializable)</td>
+<td>不可能</td>
+<td>不可能</td>
+<td>不可能</td>
+</tr>
+</tbody>
+</table>
+<h4 id="快照读和当前读"><a href="#快照读和当前读" class="headerlink" title="快照读和当前读"></a>快照读和当前读</h4><ul>
+<li>快照读：就是select<ul>
+<li>select * from table …</li>
+</ul>
+</li>
+<li>当前读：特殊的读操作，插入/更新/删除操作，属于当前读，处理的都是当前的数据<ul>
+<li>select * from table where ? lock in share mode</li>
+<li>select * from table where ? for update</li>
+<li>insert/update/delete</li>
+</ul>
+</li>
+<li>事务的隔离级别实际上都是定义了当前读的级别，MySQL为了减少锁处理的时间，提升并发能力，引入了快照读的概念，使得select不用加锁。而update、insert等当前读，就需要另外的模块来解决了。</li>
+</ul>
+<h3 id="Read-Committed"><a href="#Read-Committed" class="headerlink" title="Read Committed"></a>Read Committed</h3><p>解决脏读问题，存在不可重复读和幻读</p>
+<h4 id="读-快照读"><a href="#读-快照读" class="headerlink" title="读/快照读"></a>读/快照读</h4><p>在RC级别中，数据的读取都是不加锁的。</p>
+<ul>
+<li>读不加锁的实现：当拿到MVCC某个版本的时候，去全局未提交表里查找下，如果不存在说明事务已提交，返回结果则可。</li>
+</ul>
+<h4 id="写-当前读"><a href="#写-当前读" class="headerlink" title="写/当前读"></a>写/当前读</h4><p>在RC级别中，数据的写入、修改和删除是需要加锁的。</p>
+<ul>
+<li>如果where条件无法通过索引快速过滤，存储引擎层面就会将所有记录加锁后返回，再由MySQL层进行过滤。</li>
+<li>但在实际使用过程当中，MySQL做了一些改进，在MySQL过滤条件，发现不满足后，会调用unlock_row方法，把不满足条件的记录释放锁 (违背了二段锁协议的约束)。</li>
+</ul>
+<p>RC级别下存在的问题</p>
+<ul>
+<li>可以解决当前读不可重复读的问题，比如update同一行，可以避免</li>
+<li>插入和update同一索引id的事务可以同时进行</li>
+</ul>
+<h3 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h3><p>解决可重复读的问题，同时MySQL在这个级别还解决了幻读问题。</p>
+<h4 id="读-快照读-1"><a href="#读-快照读-1" class="headerlink" title="读/快照读"></a>读/快照读</h4><p>不可重复读和幻读的区别：在于如何通过锁机制来解决他们产生的问题。</p>
+<ul>
+<li>不可重复读重点在于update和delete，而幻读的重点在于insert。</li>
+<li>不可重复读可以通过行锁来解决，读取的时候加锁，其他事务无法修改该行。</li>
+<li>幻读：插入新数据导致的，无法通过行锁解决。</li>
+</ul>
+<p>加锁是悲观的解决方式，MySQL没有采用，而是采用的MVVC，可以解决快照读的不可重复读/幻读问题</p>
+<ul>
+<li>在InnoDB中，会在每行数据后添加两个额外的隐藏的值来实现MVCC，分别记录创建版本和删除版本</li>
+<li>SELECT时，读取创建版本号&lt;=当前事务版本号，删除版本号为空或&gt;当前事务版本号</li>
+<li>INSERT时，保存当前事务版本号为行的创建版本号</li>
+<li>DELETE时，保存当前事务版本号为行的删除版本号</li>
+<li>UPDATE时，插入一条新纪录，保存当前事务版本号为行创建版本号，同时保存当前事务版本号到原来删除的行</li>
+<li>MVCC可以通过Undo日志来实现，数据行里面有指针可以指向Undo日志（Undo日志相当于数据）</li>
+</ul>
+<h4 id="写-当前读-1"><a href="#写-当前读-1" class="headerlink" title="写/当前读"></a>写/当前读</h4><p>RR模式下，插入和update同一索引id的事务不可以同时进行，避免当前读的幻读问题</p>
+<ul>
+<li>通过gap锁来实现，update行的时候会锁住行左右的区间</li>
+<li>受限于这种实现方式，Innodb很多时候会锁住不需要锁的区间</li>
+<li>如果数据有id=5和30，update id=20会锁住(5，30]，不允许插入id=10的记录，但是允许插入id=40的记录</li>
+<li>如果更新使用的是没有索引字段，则会锁全表，同时无法像上面那样过滤自动解除不满足条件的锁。</li>
+</ul>
+<h3 id="Serializable"><a href="#Serializable" class="headerlink" title="Serializable"></a>Serializable</h3><p>相比上面的RR，这个级别select也会加共享锁。</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><ol>
+<li><a href="https://tech.meituan.com/2014/08/20/innodb-lock.html" target="_blank" rel="external">https://tech.meituan.com/2014/08/20/innodb-lock.html</a></li>
+<li><a href="https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/" target="_blank" rel="external">https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/21/MySQL事务漫谈/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2018/08/21/MySQL事务漫谈/" itemprop="url">
+                  MySQL事务漫谈
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-21T14:30:17+08:00">
+                2018-08-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/08/21/MySQL事务漫谈/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2018/08/21/MySQL事务漫谈/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>###事务的基本属性</p>
+<h4 id="关于C"><a href="#关于C" class="headerlink" title="关于C"></a>关于C</h4><p>在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)</p>
+<h4 id="关于A"><a href="#关于A" class="headerlink" title="关于A"></a>关于A</h4><p>所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。</p>
+<p>在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。后者由数据库的原子性来保证，即在同一个事务内部的一组操作必须全部执行成功或者全部失败。</p>
+<p>原子性的实现依赖回滚日志（Undo）。</p>
+<h4 id="关于I"><a href="#关于I" class="headerlink" title="关于I"></a>关于I</h4><p>但是原子性并不能完全保证一致性，比如在多个事务并发进行的情况下，事务A的结果可能被事务B覆盖。因此需要引入隔离性，即多个事务并发执行后的状态，和它们串行执行后的状态是等价的。</p>
+<p>隔离性的实现依赖锁：悲观锁（加锁）和乐观锁（MVCC）。</p>
+<h4 id="关于D"><a href="#关于D" class="headerlink" title="关于D"></a>关于D</h4><p>持久性体现在：一旦事务被提交，数据要是持久存储的。</p>
+<p>持久性的实现依赖落盘，为了高效实现，引入了重做日志（Redo）。</p>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>ACID是数据库运行的基石，原子性和持久性比较好理解，一致性除了对数据库本身的要求，还对业务开发者提出了要求——逻辑必须正确。隔离性比较复杂，有不同的隔离级别，实现起来对数据库的性能影响会比较大。</p>
+<p>本文先专注于原子性和持久性的实现，关于隔离性的讨论放到下一篇文章。</p>
+<h3 id="Undo日志"><a href="#Undo日志" class="headerlink" title="Undo日志"></a>Undo日志</h3><p>基本的数据流程：先将数据从磁盘读到内存中，然后修改内存中的数据，最后将数据写回磁盘。这里面的任何异常都会导致原子性无法满足，比如执行一般抛出异常、写磁盘中途故障等等。引入Undo日志，可以保证原子性。</p>
+<p>Undo日志记录旧数据，可以实现原子性，数据操作之前，先写Undo日志，然后再进行数据修改，出现异常使用Undo日志回滚。</p>
+<p>流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">A.事务开始.</span><br><span class="line">B.记录A=1到undo log.</span><br><span class="line">C.修改A=3.</span><br><span class="line">D.记录B=2到undo log.</span><br><span class="line">E.修改B=4.</span><br><span class="line">F.将undo log写到磁盘。</span><br><span class="line">G.将数据写到磁盘。</span><br><span class="line">H.事务提交</span><br></pre></td></tr></table></figure>
+<p>核心思想：</p>
+<ol>
+<li>更新数据前记录Undo日志，写磁盘也是，Undo日志先落盘。</li>
+<li>为了保证持久性，提交前需要将数据刷到磁盘。（没有Redo日志）</li>
+<li>先刷Undo日志的目的：保证在G~H之间系统崩溃，undo log是完整的，可以用来回滚。</li>
+<li>如果A~F直接崩溃，数据还未持久化到磁盘，无影响。undo log如果只刷一半，也是没有影响的。</li>
+</ol>
+<p>存在的问题：undo log可以顺序刷磁盘，性能还行。数据刷磁盘需要随机，性能就很低了。如果缓存数据，可以保证原子性，但是没办法保证持久性，提交之后的日志还会回滚，undo log只能恢复到旧值，没办法恢复到新值。持久性保证需要引入Redo日志。</p>
+<h3 id="Redo日志"><a href="#Redo日志" class="headerlink" title="Redo日志"></a>Redo日志</h3><p>Redo日志和Undo日志相反，记录旧数据，在事务提交前，只要将Redo日志持久化，不需要将数据持久化。系统奔溃之后也能根据持久化的Redo日志来恢复。</p>
+<p>流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">A.事务开始.</span><br><span class="line">B.记录A=1到undo log.</span><br><span class="line">C.修改A=3.</span><br><span class="line">D.记录A=3到redo log.</span><br><span class="line">E.记录B=2到undo log.</span><br><span class="line">F.修改B=4.</span><br><span class="line">G.记录B=4到redo log.</span><br><span class="line">H.将redo log写入磁盘。</span><br><span class="line">I.事务提交</span><br></pre></td></tr></table></figure>
+<p>核心思想：</p>
+<ol>
+<li>为了保证持久性，必须在事务提交前将Redo日志持久化。</li>
+<li>数据不需要在事务提交前写入磁盘，而是缓存在内存中，且必须晚于Redo日志持久化。</li>
+<li>Redo日志保证持久性，Undo日志保证原子性。</li>
+<li>Redo日志采取内存批量buffer和顺序追加的方式来改善性能。</li>
+<li>并发事务共享Redo日志，按执顺序依次记录，节省空间，进一步提升性能。但是会导致未提交的事务日志写入磁盘。</li>
+</ol>
+<p>恢复：</p>
+<ol>
+<li>两种策略：<ul>
+<li>恢复时，只重做已经提交了的事务。</li>
+<li>恢复时，重做所有事务（包括未提交和回滚的事务），然后通过Undo日志回滚未提交的事务。</li>
+</ul>
+</li>
+<li>MySQL数据库InnoDB存储引擎使用了第二种策略<ul>
+<li>重做Redo日志时，不关心是哪个事务，直接重做，然后再执行Undo日志</li>
+<li>必须保证Undo日志持久化，且必须先于Redo日志持久化。</li>
+<li>这种关联带来了复杂性，为了降低复杂性，InnoDB将undo log看作数据，因此记录undo log的操作也会记录到redo log中。这样就可以通过redo log来执行undo操作了。</li>
+</ul>
+</li>
+<li>回滚的事务也会被恢复，只不过在恢复时的操作就是先redo再undo，不会破坏一致性。</li>
+</ol>
+<h4 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h4><p>Undo和Redo只是一种逻辑上的划分，MySQL的实现还考虑了隔离性的问题，如果不考虑隔离性，用一条记录同时保持新值和就值就可以达到上述目标。</p>
+<h3 id="其他问题"><a href="#其他问题" class="headerlink" title="其他问题"></a>其他问题</h3><p>原子性的基础：日志记录是完整的，不存在半行的日志落盘等。</p>
+<p>还有一个问题：事务的提交动作是怎样的？一般来说Redo日志记录COMMIT标记即可。这个对于MySQL主从是有问题的。</p>
+<p>为了保证master和slave的数据一致性，就必须保证binlog和InnoDB redo日志的一致性。因为从库通过二进制日志重放主库提交的事务，而主库binlog写入在commit之前，如果写完binlog主库crash，再次启动时会回滚事务。但此时从库已经执行，则会造成主备数据不一致。所以在开启Binlog后，如何保证binlog和InnoDB redo日志的一致性呢？</p>
+<p>Commit阶段包含两步：write/sync Binlog和InnoDB commit。binlog的写入与否作为事务提交成功与否的标志，innodb commit标志并不是事务提交成功与否的标志。依赖Redo日志，binlog日志可以做到非重复（个人猜测）。</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><ol>
+<li><a href="https://draveness.me/mysql-transaction#" target="_blank" rel="external">https://draveness.me/mysql-transaction#</a></li>
+<li><a href="https://www.qiancheng.me/post/coding/mysql-001" target="_blank" rel="external">https://www.qiancheng.me/post/coding/mysql-001</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/19/MySQL隔离级别及实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2018/03/19/MySQL隔离级别及实现/" itemprop="url">
+                  MySQL隔离级别及实现
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-19T14:30:17+08:00">
+                2018-03-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术/" itemprop="url" rel="index">
+                    <span itemprop="name">技术</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/03/19/MySQL隔离级别及实现/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2018/03/19/MySQL隔离级别及实现/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>最近在看<a href="https://book.douban.com/subject/23008813/" target="_blank" rel="external">《高性能MySQL》</a>一书，关于书中MySQL解决幻读的问题有一些疑问：在1.3.1小节介绍可重复读时描述：InnoDB通过多版本并发控制MVCC解决了幻读问题，并在1.4多版本并发控制小节中进一步说明了是如何解决的。然后，后文1.5.1中又说InnoDB通过间隙锁（next-key locking）策略防止幻读的出现。第一次读的时候感觉比较奇怪，通过多版本完全可以解决幻读的问题，读事务只会看到自己之前的数据，其他事务是无法影响它的，为什么还需要间隙锁来防止幻读出现？在多番Google之后，终于明白了其中的玄机。</p>
+<h3 id="数据库隔离级别"><a href="#数据库隔离级别" class="headerlink" title="数据库隔离级别"></a>数据库隔离级别</h3><p>隔离级别用来限制事务之间的交互程度，用于解决ACID中的隔离性问题，目前业界一般有如下4种隔离级别：</p>
+<ol>
+<li>READ_UNCOMMITTED：未提交读，在该级别下，事务中的修改，即使没有提交，对其他事务也是可见的。该级别会产生所谓的脏读，导致很多问题；</li>
+<li>READ_COMMITTED：提交读，在该级别下，事务开始后，只能看见已提交的事务所做的修改，如果其他事务在该事务进行过程中提交，则该事务可以看见提交后的修改。该级别也叫不可重复读，因为前后两次同样的查询，可能会得到不一样的结果；</li>
+<li>REPEATABLE_READ：可重复读，该级别保证在同一个事务中，多次读取同样记录的结果是一致的。注意：这里的可重复读重点在于update和delete，而不在于insert。该级别无法解决“幻读”问题：范围查询可能会读到其他事务insert的幻行，这一点通过普通的行锁难以解决；</li>
+<li>SERIALIZABLE：可串行化，该级别通过强制事务串行化执行来保证隔离性，是最高的隔离级别；</li>
+</ol>
+<p>隔离级别依次增强，但是导致的问题是并发能力的减弱。MySQL的InnoDB引擎支持所有的隔离级别，默认的隔离级别是可重复读。需要注意：MySql的RR级别是解决了幻读的。</p>
+<h3 id="InnoDB引擎的解决方案"><a href="#InnoDB引擎的解决方案" class="headerlink" title="InnoDB引擎的解决方案"></a>InnoDB引擎的解决方案</h3><p>通过MVCC解决“快照读”的幻读问题，通过间隙锁解决“当前读”的幻读问题。具体思路如下：</p>
+<ol>
+<li>脏读的解决方案：可以通过读写互斥锁来解决，正在写的数据不允许读，等待释放。但是这样性能太低，对于MySql，如果读取的行正在执行update或delete操作，这时读操作不会等待行上锁的释放，而是读取行的一个快照数据；</li>
+<li>不可重复读的解决方案：RR下，事务在第一个Read操作时（而非事务开始时），会建立ReadView；RC下，事务在每次Read操作时，都会重新建立Read View。Read View可以解决其他事务的update和delete影响；</li>
+<li>幻读的解决方案：Read View也可以解决其他事务的insert对“快照读”的影响，但是无法解决“当前读”的问题。例子：比如常见的先读后写业务，事务T1先检查没有id=1的记录然后再插入id=1的记录，如果在期间T2已经插入了id=1的记录，且已经提交，则此时T1会出现“幻读”。这个光通过MVCC和行锁是无法解决的，MySql引人间隙键的方式；</li>
+</ol>
+<p>总结一下：</p>
+<ol>
+<li>对于MySql，不可重复读侧重表达读-读，幻读则是说读-写，用写来证实读的是鬼影；</li>
+<li>在RR下，MVCC可以这样理解：MV(Multi Version)用于解决脏读和不可重复读，而CC(Concurrency Control)则是利用Next-Key Lock解决幻读问题;</li>
+<li>RR为InnoDB的默认事务隔离级别，RR已经完全保证事务的隔离性要求，即达到SERIALIZABLE隔离级别；</li>
+</ol>
+<h3 id="多版本并发控制MVCC"><a href="#多版本并发控制MVCC" class="headerlink" title="多版本并发控制MVCC"></a>多版本并发控制MVCC</h3><p>MVCC原理：每行记录保存两个隐藏的列，一个记录该行的创建时间，一个记录该行的过期或删除时间。存储的并非实际的时间，而是系统或事务的版本号，该版本号随事务自动递增。MVCC只在读提交和可重复读这两个隔离级别下工作，与另外两个隔离级别不兼容。在可重复读隔离级别下，具体的操作如下：</p>
+<ol>
+<li>读操作：只查找创建版本小于等于当前事务版本 &amp;&amp; 删除版本大于当前事务版本或者为空的行</li>
+<li>插入操作：新增创建版本为当前事务版本的行</li>
+<li>删除操作：标记删除行的过期或删除版本</li>
+<li>更新操作：插入新行并删除旧行</li>
+</ol>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p><a href="https://tech.meituan.com/2014/08/20/innodb-lock.html" target="_blank" rel="external">https://tech.meituan.com/2014/08/20/innodb-lock.html</a><br><a href="https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/" target="_blank" rel="external">https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/</a></p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/29/Kafka学习/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/12/29/Kafka学习/" itemprop="url">
+                  Kafka学习
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-29T11:00:14+08:00">
+                2017-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/大数据/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/12/29/Kafka学习/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/12/29/Kafka学习/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h3><ol>
+<li>Message System<ul>
+<li>vs message queue: queues aren’t multi-subscriber</li>
+<li>vs publish-subscribe: broadcast, not scaling</li>
+<li>高效支持多组订阅和组内并发，提供更强的有序保证</li>
+</ul>
+</li>
+<li>Storage System<ul>
+<li>commit log storage and distributed replication</li>
+</ul>
+</li>
+<li>Stream Process<ul>
+<li>支持实时处理</li>
+<li>Kafka Streams API</li>
+<li>Spark Streaming</li>
+<li>Storm</li>
+</ul>
+</li>
+</ol>
+<h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><ol>
+<li>data flow<ul>
+<li>topic表示消息流标识符</li>
+<li>producer往topic发消息，Kafka提供Producer API</li>
+<li>consumer从topic消费消息，Kafka提供Consumer API</li>
+<li>消息由key, value, timestamp构成</li>
+<li>一个topic可以关联多个producers和多个consumers</li>
+</ul>
+</li>
+<li>topic<ul>
+<li>topic分布式partition</li>
+<li>每个partition由leader和followers维护，leader提供服务，followers备份leader</li>
+<li>消息部分有序（a producer to a particular topic partition），非全局有序</li>
+<li>producer负责发送消息到哪个partition，round-robin或按key自定义，没有中间路由</li>
+<li>consumer实际上是group的概念<ul>
+<li>group内的多个消费实例共同消费topic的消息</li>
+<li>每个partition只能被一个实例消费</li>
+<li>每个消费实例可以处理一个或多个partition</li>
+<li>消费实例多余partition数量没意义</li>
+</ul>
+</li>
+<li>多consumers消费同一份数据，各consumer自己控制offset</li>
+</ul>
+</li>
+</ol>
+<h3 id="消息语义"><a href="#消息语义" class="headerlink" title="消息语义"></a>消息语义</h3><ol>
+<li>at least once<ul>
+<li>默认语义</li>
+</ul>
+</li>
+<li>at most once<ul>
+<li>并非可配置，需要用户实现</li>
+<li>producer端：关闭重试</li>
+<li>consumer端：处理之前先commit offset</li>
+</ul>
+</li>
+<li>exactly once<ul>
+<li>0.11.0.0开始的版本支持</li>
+<li>producer端：<ul>
+<li>配置id和seq，可以保证消息不重复产生</li>
+<li>支持批量消息事务，要么都成功，要么都不成功</li>
+</ul>
+</li>
+<li>方法：<ul>
+<li>对于消费topic输出到topic，可以采用批量消息事务，同时发送消费的offset到新topic</li>
+<li>两阶段提交，建议最好offset和处理结果一起输出</li>
+<li>使用幂等操作</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h3><ol>
+<li>消息确认<ul>
+<li>leader确认过的消息consumer才能看到</li>
+<li>leader需要follower备份之后才能commit</li>
+<li>多数人投票算法：容错f，需要2*f+1个备份，f+1个收到即可</li>
+<li>Kafka保存ISR(in-sync replicas)到zookeeper，容错f，需要f+1个备份</li>
+<li>客户端可以配置忽略commit返回</li>
+</ul>
+</li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/18/Hystrix机制详解/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1367,835 +2237,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/17/Spark任务提交之RDD/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2017/04/17/Spark任务提交之RDD/" itemprop="url">
-                  Spark任务提交之RDD
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-17T13:50:54+08:00">
-                2017-04-17
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/大数据/" itemprop="url" rel="index">
-                    <span itemprop="name">大数据</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2017/04/17/Spark任务提交之RDD/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/17/Spark任务提交之RDD/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h3 id="RDD"><a href="#RDD" class="headerlink" title="RDD"></a>RDD</h3><p>RDD的全名是Resilient Distributed Dataset，意思是容错的分布式数据集。RDD是Spark任务的输入，Spark应用一般是通过对RDD进行计算得到结果，结果可以是RDD，也可以是reduce的值。Spark框架提供了很多RDD的算子。根据源码里面的解释，RDD具有如下5个特征：</p>
-<ol>
-<li>A list of partitions</li>
-<li>A function for computing each split</li>
-<li>A list of dependencies on other RDDs</li>
-<li>Optionally, a Partitioner for key-value RDDs (e.g. to say that the RDD is hash-partitioned)</li>
-<li>Optionally, a list of preferred locations to compute each split on (e.g. block locations for an HDFS file)</li>
-</ol>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Implemented by subclasses to compute a given partition.</span><br><span class="line"> */</span></span><br><span class="line"><span class="meta">@DeveloperApi</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">T</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Implemented by subclasses to return the set of partitions in this RDD. This method will only</span><br><span class="line"> * be called once, so it is safe to implement a time-consuming computation in it.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getPartitions</span></span>: <span class="type">Array</span>[<span class="type">Partition</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Implemented by subclasses to return how this RDD depends on parent RDDs. This method will only</span><br><span class="line"> * be called once, so it is safe to implement a time-consuming computation in it.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getDependencies</span></span>: <span class="type">Seq</span>[<span class="type">Dependency</span>[_]] = deps</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Optionally overridden by subclasses to specify placement preferences.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getPreferredLocations</span></span>(split: <span class="type">Partition</span>): <span class="type">Seq</span>[<span class="type">String</span>] = <span class="type">Nil</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/** Optionally overridden by subclasses to specify how they are partitioned. */</span></span><br><span class="line"><span class="meta">@transient</span> <span class="keyword">val</span> partitioner: <span class="type">Option</span>[<span class="type">Partitioner</span>] = <span class="type">None</span></span><br></pre></td></tr></table></figure>
-<h3 id="MapPartitionsRDD"><a href="#MapPartitionsRDD" class="headerlink" title="MapPartitionsRDD"></a>MapPartitionsRDD</h3><p>就拿我们最常见的<code>textFile</code>来看，内部调用了<code>hadoopFile</code>，<code>hadoopFile</code>方法封装了一下参数之后，直接返回了<code>HadoopRDD</code>。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> hdfsFile = sc.textFile(args(<span class="number">1</span>))</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * Read a text file from HDFS, a local file system (available on all nodes), or any</span><br><span class="line"> * Hadoop-supported file system URI, and return it as an RDD of Strings.</span><br><span class="line"> */</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">textFile</span></span>(</span><br><span class="line">    path: <span class="type">String</span>,</span><br><span class="line">    minPartitions: <span class="type">Int</span> = defaultMinPartitions): <span class="type">RDD</span>[<span class="type">String</span>] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[<span class="type">TextInputFormat</span>], classOf[<span class="type">LongWritable</span>], classOf[<span class="type">Text</span>],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>HadoopRDD</code>继承自RDD，自然需要实现上面的5个接口。</p>
-<ol>
-<li><code>getPartitions</code>直接根据InputFormat的Splits返回<code>HadoopPartition</code>，一个split对应一个partition</li>
-<li><code>compute</code>方法得出一个可遍历的结果，封装RecordReader得到Iterator</li>
-<li><code>getDependencies</code>继承的时候就设置为空了<code>RDD[(K, V)](sc, Nil)</code>，不需要覆盖</li>
-<li><code>getPreferredLocations</code>同Hadoop</li>
-<li><code>partitioner</code>也不需要，为空</li>
-</ol>
-<p>返回的<code>HadoopRDD</code>紧接着调用了map方法，转换成<code>MapPartitionsRDD</code>，<code>HadoopRDD</code>成了<code>MapPartitionsRDD</code>的父依赖了，这个OneToOneDependency是一个窄依赖。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Return a new RDD by applying a function to all elements of this RDD.</span><br><span class="line"> */</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">map</span></span>[<span class="type">U</span>: <span class="type">ClassTag</span>](f: <span class="type">T</span> =&gt; <span class="type">U</span>): <span class="type">RDD</span>[<span class="type">U</span>] = withScope &#123;</span><br><span class="line">  <span class="keyword">val</span> cleanF = sc.clean(f)</span><br><span class="line">  <span class="keyword">new</span> <span class="type">MapPartitionsRDD</span>[<span class="type">U</span>, <span class="type">T</span>](<span class="keyword">this</span>, (context, pid, iter) =&gt; iter.map(cleanF))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>[spark] <span class="class"><span class="keyword">class</span> <span class="title">MapPartitionsRDD</span>[<span class="type">U</span>: <span class="type">ClassTag</span>, <span class="type">T</span>: <span class="type">ClassTag</span>](<span class="params"></span><br><span class="line">  var prev: <span class="type">RDD</span>[<span class="type">T</span>],</span><br><span class="line">  f: (<span class="type">TaskContext</span>, <span class="type">Int</span>, <span class="type">Iterator</span>[<span class="type">T</span>]</span>) <span class="title">=&gt;</span> <span class="title">Iterator</span>[<span class="type">U</span>],  <span class="title">//</span> (<span class="params"><span class="type">TaskContext</span>, partition index, iterator</span>)</span></span><br><span class="line">  preservesPartitioning: <span class="type">Boolean</span> = <span class="literal">false</span>)</span><br><span class="line"><span class="keyword">extends</span> <span class="type">RDD</span>[<span class="type">U</span>](prev) &#123;</span><br><span class="line"><span class="comment">// RDD[U]建立依赖关系，</span></span><br><span class="line"><span class="comment">// def this(@transient oneParent: RDD[_]) =</span></span><br><span class="line"><span class="comment">//   this(oneParent.context , List(new OneToOneDependency(oneParent)))</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// getPartitions直接使用窄依赖parent的partitions</span></span><br><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getPartitions</span></span>: <span class="type">Array</span>[<span class="type">Partition</span>] = firstParent[<span class="type">T</span>].partitions</span><br><span class="line"></span><br><span class="line"><span class="comment">// 转换函数直接封装之前的迭代器</span></span><br><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">U</span>] =</span><br><span class="line">  f(context, split.index, firstParent[<span class="type">T</span>].iterator(split, context))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// (context, pid, iter) =&gt; iter.map(cleanF)里面的map就是scala语言的map</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">map</span></span>[<span class="type">B</span>](f: <span class="type">A</span> =&gt; <span class="type">B</span>): <span class="type">Iterator</span>[<span class="type">B</span>] = <span class="keyword">new</span> <span class="type">AbstractIterator</span>[<span class="type">B</span>] &#123;</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">hasNext</span> </span>= self.hasNext</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">next</span></span>() = f(self.next())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="ShuffledRDD"><a href="#ShuffledRDD" class="headerlink" title="ShuffledRDD"></a>ShuffledRDD</h3><p>上文的RDD转换比较简单，我们再看一下RDD里面的<code>distinct()</code>，使用了reduceByKey操作，追杀发现</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">combineByKeyWithClassTag</span></span>[<span class="type">C</span>](</span><br><span class="line">      createCombiner: <span class="type">V</span> =&gt; <span class="type">C</span>,</span><br><span class="line">      mergeValue: (<span class="type">C</span>, <span class="type">V</span>) =&gt; <span class="type">C</span>,</span><br><span class="line">      mergeCombiners: (<span class="type">C</span>, <span class="type">C</span>) =&gt; <span class="type">C</span>,</span><br><span class="line">      partitioner: <span class="type">Partitioner</span>,</span><br><span class="line">      mapSideCombine: <span class="type">Boolean</span> = <span class="literal">true</span>,</span><br><span class="line">      serializer: <span class="type">Serializer</span> = <span class="literal">null</span>)(<span class="keyword">implicit</span> ct: <span class="type">ClassTag</span>[<span class="type">C</span>]): <span class="type">RDD</span>[(<span class="type">K</span>, <span class="type">C</span>)] = self.withScope &#123;</span><br><span class="line">    <span class="keyword">val</span> aggregator = <span class="keyword">new</span> <span class="type">Aggregator</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>](</span><br><span class="line">      self.context.clean(createCombiner),</span><br><span class="line">      self.context.clean(mergeValue),</span><br><span class="line">      self.context.clean(mergeCombiners))</span><br><span class="line">    <span class="keyword">if</span> (self.partitioner == <span class="type">Some</span>(partitioner)) &#123;</span><br><span class="line">      <span class="comment">// 如果本身就是shuffle好的，直接map即可</span></span><br><span class="line">      <span class="comment">// 这个一般不成立，除非之前已经shuffle过了</span></span><br><span class="line">      self.mapPartitions(iter =&gt; &#123;</span><br><span class="line">        <span class="keyword">val</span> context = <span class="type">TaskContext</span>.get()</span><br><span class="line">        <span class="keyword">new</span> <span class="type">InterruptibleIterator</span>(context, aggregator.combineValuesByKey(iter, context))</span><br><span class="line">      &#125;, preservesPartitioning = <span class="literal">true</span>)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 否则需要shuffle  </span></span><br><span class="line">      <span class="keyword">new</span> <span class="type">ShuffledRDD</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>](self, partitioner)</span><br><span class="line">        .setSerializer(serializer)</span><br><span class="line">        .setAggregator(aggregator)</span><br><span class="line">        .setMapSideCombine(mapSideCombine)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p><code>ShuffledRDD</code>的计算会被切分成map和reduce两个Stage，map结束之后再拉取数据进行reduce，这部分依赖Spark的storage模块，RDD仅仅是数据的“形”，封装了诸多接口，RDD真正的“体”是由storage模块来实现和管理。就像初始化的Hadoop文件可以创建RDD外，中间真正计算出来的RDD的存取都是由storage模块来负责的，这部分的内容后续会介绍。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ShuffledRDD</span>[<span class="type">K</span>: <span class="type">ClassTag</span>, <span class="type">V</span>: <span class="type">ClassTag</span>, <span class="type">C</span>: <span class="type">ClassTag</span>](<span class="params"></span><br><span class="line">    @transient var prev: <span class="type">RDD</span>[_ &lt;: <span class="type">Product2</span>[<span class="type">K</span>, <span class="type">V</span>]],</span><br><span class="line">    part: <span class="type">Partitioner</span></span>)</span></span><br><span class="line">  <span class="keyword">extends</span> <span class="type">RDD</span>[(<span class="type">K</span>, <span class="type">C</span>)](prev.context, <span class="type">Nil</span>) &#123;</span><br><span class="line">  <span class="comment">// 这里并没有传入依赖</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 依赖关系是创建出来的，不像MapPartitionsRDD直接通过RDD即可确定</span></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getDependencies</span></span>: <span class="type">Seq</span>[<span class="type">Dependency</span>[_]] = &#123;</span><br><span class="line">    <span class="type">List</span>(<span class="keyword">new</span> <span class="type">ShuffleDependency</span>(prev, part, serializer, keyOrdering, aggregator, mapSideCombine))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 传进来的partitioner，一般就是HashPartitioner</span></span><br><span class="line">  <span class="keyword">override</span> <span class="keyword">val</span> partitioner = <span class="type">Some</span>(part)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getPartitions</span></span>: <span class="type">Array</span>[<span class="type">Partition</span>] = &#123;</span><br><span class="line">    <span class="type">Array</span>.tabulate[<span class="type">Partition</span>](part.numPartitions)(i =&gt; <span class="keyword">new</span> <span class="type">ShuffledRDDPartition</span>(i))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="keyword">protected</span> <span class="function"><span class="keyword">def</span> <span class="title">getPreferredLocations</span></span>(partition: <span class="type">Partition</span>): <span class="type">Seq</span>[<span class="type">String</span>] = &#123;</span><br><span class="line">    <span class="keyword">val</span> tracker = <span class="type">SparkEnv</span>.get.mapOutputTracker.asInstanceOf[<span class="type">MapOutputTrackerMaster</span>]</span><br><span class="line">    <span class="keyword">val</span> dep = dependencies.head.asInstanceOf[<span class="type">ShuffleDependency</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>]]</span><br><span class="line">    tracker.getPreferredLocationsForShuffle(dep, partition.index)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// reduce函数已经封装在ShuffleDependency里面了</span></span><br><span class="line">  <span class="comment">// shuffle依赖Spark的shuffleManager，这个后续再慢慢探究</span></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[(<span class="type">K</span>, <span class="type">C</span>)] = &#123;</span><br><span class="line">    <span class="keyword">val</span> dep = dependencies.head.asInstanceOf[<span class="type">ShuffleDependency</span>[<span class="type">K</span>, <span class="type">V</span>, <span class="type">C</span>]]</span><br><span class="line">    <span class="type">SparkEnv</span>.get.shuffleManager.getReader(dep.shuffleHandle, split.index, split.index + <span class="number">1</span>, context)</span><br><span class="line">      .read()</span><br><span class="line">      .asInstanceOf[<span class="type">Iterator</span>[(<span class="type">K</span>, <span class="type">C</span>)]]</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/10/Spark任务提交之Deploy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2017/04/10/Spark任务提交之Deploy/" itemprop="url">
-                  Spark任务提交之Deploy
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-10T21:16:22+08:00">
-                2017-04-10
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/大数据/" itemprop="url" rel="index">
-                    <span itemprop="name">大数据</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2017/04/10/Spark任务提交之Deploy/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/10/Spark任务提交之Deploy/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>项目中使用到了Spark，一直都是处在应用状态，最近有时间想研究下Spark是如何运行的。之前对Hadoop和Scala都有所了解，觉得Spark可以看成是分布式的Scala执行环境，因为各种RDD的转换实在是和Scala的函数式编程太像了。相比Hadoop，Spark可以看成是基于内存的MapReduce。实际上这些认识都太肤浅了，这个系列会简单剖析下Spark的运行原理。</p>
-<p>在Hadoop2.0版本之前，Hadoop的JobTrack需要同时承担资源管理以及应用监控两重任务，容易成为瓶颈，限制集群的最大规模。引入YARN之后，全局的ResourceManager（RM）和与每个应用相关的ApplicationMaster（AM）承担了JobTrack的功能。RM负责接收应用，并根据集群资源情况调度（调度器Scheduler组件）应用运行；每个被调度的应用会在集群中启动一个AM，AM负责同调度器协商以获取合适的容器，并跟踪这些容器的状态和监控其进度。</p>
-<p>Spark在资源管理和调度方式上采用了类似于Hadoop YARN的方式。最上层是资源调度器，它负责分配资源和调度注册到Spark中的所有应用，Spark有自带的standalone集群框架，也可以使用Mesos或是YARN等作为其资源调度框架。在每一个应用内部，Spark又实现了任务调度器（由drive负责），负责任务的调度和协调。本文主要介绍资源分配的部分，由于项目使用的Spark版本为1.6.2，因此本系列的源码都基于该版本。</p>
-<p>提交spark任务需要通过<code>spark-submit</code>命令，对应的<code>org.apache.spark.deploy.SparkSubmit</code>的main方法</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span></span>(args: <span class="type">Array</span>[<span class="type">String</span>]): <span class="type">Unit</span> = &#123;</span><br><span class="line">  <span class="keyword">val</span> appArgs = <span class="keyword">new</span> <span class="type">SparkSubmitArguments</span>(args)</span><br><span class="line">  ...</span><br><span class="line">  appArgs.action <span class="keyword">match</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">SUBMIT</span> =&gt; submit(appArgs)</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">KILL</span> =&gt; kill(appArgs)</span><br><span class="line">    <span class="keyword">case</span> <span class="type">SparkSubmitAction</span>.<span class="type">REQUEST_STATUS</span> =&gt; requestStatus(appArgs)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submit</span></span>(args: <span class="type">SparkSubmitArguments</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">  <span class="keyword">val</span> (childArgs, childClasspath, sysProps, childMainClass) = prepareSubmitEnvironment(args)</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// 中间有些曲折，实际上调用的就是runMain</span></span><br><span class="line">  runMain(childArgs, childClasspath, sysProps, childMainClass, args.verbose)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>runMain</code>通过反射调用childMainClass，主要看看<code>prepareSubmitEnvironment</code>。该方法为应用提交准备环境，设置命令行参数，比如应用运行的集群master以及driver的部署方式。driver的部署模式有两种：client和cluster，默认是client，直接在本地运行driver（此时的childMainClass就是application main class），cluster则是将driver也放到集群上运行。</p>
-<p>cluster的部署方式主要有三种：</p>
-<ol>
-<li>standalone的childMainClass是<code>org.apache.spark.deploy.Client</code></li>
-<li>yarn模式的childMainClass是<code>org.apache.spark.deploy.yarn.Client</code></li>
-<li>mesos模式的childMainClass是<code>org.apache.spark.deploy.rest.RestSubmissionClient</code></li>
-</ol>
-<p>奇怪的是，源码里面根本没有<code>org.apache.spark.deploy.yarn.Client</code>这个类，先研究standalone这种模式好了。（原来这个类在yarn那个目录下，IDE没有识别出来，先把基本的流程搞清楚，后续再研究yarn的模式）</p>
-<p><code>org.apache.spark.deploy.Client</code>的main方法会创建一个<code>ClientEndpoint</code>，启动之后（onStart方法）会向master发送RequestSubmitDriver消息，master收到消息的代码如下：</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">RequestSubmitDriver</span>(description) =&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (state != <span class="type">RecoveryState</span>.<span class="type">ALIVE</span>) &#123;</span><br><span class="line">      ...</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      logInfo(<span class="string">"Driver submitted "</span> + description.command.mainClass)</span><br><span class="line">      <span class="keyword">val</span> driver = createDriver(description)</span><br><span class="line">      <span class="comment">// driver封装的cmd就是application main class</span></span><br><span class="line">      persistenceEngine.addDriver(driver)</span><br><span class="line">      waitingDrivers += driver</span><br><span class="line">      drivers.add(driver)</span><br><span class="line">      <span class="comment">// 调度</span></span><br><span class="line">      schedule()</span><br><span class="line">      <span class="comment">// 告诉client提交成功了，把driver.id返回</span></span><br><span class="line">      context.reply(<span class="type">SubmitDriverResponse</span>(self, <span class="literal">true</span>, <span class="type">Some</span>(driver.id),</span><br><span class="line">        <span class="string">s"Driver successfully submitted as <span class="subst">$&#123;driver.id&#125;</span>"</span>))</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p>下面是schedule的代码，每次有新的应用提交或者资源可用变动（resource availability changes）时会被调用，先调度driver程序，然后再调度app，调度app的方式是从各个worker里面和App进行匹配，看需要分配多少个cpu。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">schedule</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">if</span> (state != <span class="type">RecoveryState</span>.<span class="type">ALIVE</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Drivers take strict precedence over executors</span></span><br><span class="line">    <span class="keyword">val</span> shuffledAliveWorkers = <span class="type">Random</span>.shuffle(workers.toSeq.filter(_.state == <span class="type">WorkerState</span>.<span class="type">ALIVE</span>))</span><br><span class="line">    <span class="keyword">val</span> numWorkersAlive = shuffledAliveWorkers.size</span><br><span class="line">    <span class="keyword">var</span> curPos = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> (driver &lt;- waitingDrivers.toList) &#123; <span class="comment">// iterate over a copy of waitingDrivers</span></span><br><span class="line">      <span class="comment">// We assign workers to each waiting driver in a round-robin fashion. For each driver, we</span></span><br><span class="line">      <span class="comment">// start from the last worker that was assigned a driver, and continue onwards until we have</span></span><br><span class="line">      <span class="comment">// explored all alive workers.</span></span><br><span class="line">      <span class="keyword">var</span> launched = <span class="literal">false</span></span><br><span class="line">      <span class="keyword">var</span> numWorkersVisited = <span class="number">0</span></span><br><span class="line">      <span class="keyword">while</span> (numWorkersVisited &lt; numWorkersAlive &amp;&amp; !launched) &#123;</span><br><span class="line">        <span class="keyword">val</span> worker = shuffledAliveWorkers(curPos)</span><br><span class="line">        numWorkersVisited += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> (worker.memoryFree &gt;= driver.desc.mem &amp;&amp; worker.coresFree &gt;= driver.desc.cores) &#123;</span><br><span class="line">          <span class="comment">// 启动driver</span></span><br><span class="line">          launchDriver(worker, driver)</span><br><span class="line">          waitingDrivers -= driver</span><br><span class="line">          launched = <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">        curPos = (curPos + <span class="number">1</span>) % numWorkersAlive</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    startExecutorsOnWorkers()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// executor的调度需要结合app，有application之后才会调用，这个在后续的任务调度会分析，需要driver先运行起来之后才会有</span></span><br><span class="line">  <span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">startExecutorsOnWorkers</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="comment">// Right now this is a very simple FIFO scheduler. We keep trying to fit in the first app</span></span><br><span class="line">    <span class="comment">// in the queue, then the second app, etc.</span></span><br><span class="line">    <span class="keyword">for</span> (app &lt;- waitingApps <span class="keyword">if</span> app.coresLeft &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">val</span> coresPerExecutor: <span class="type">Option</span>[<span class="type">Int</span>] = app.desc.coresPerExecutor</span><br><span class="line">      <span class="comment">// Filter out workers that don't have enough resources to launch an executor</span></span><br><span class="line">      <span class="keyword">val</span> usableWorkers = workers.toArray.filter(_.state == <span class="type">WorkerState</span>.<span class="type">ALIVE</span>)</span><br><span class="line">        .filter(worker =&gt; worker.memoryFree &gt;= app.desc.memoryPerExecutorMB &amp;&amp;</span><br><span class="line">          worker.coresFree &gt;= coresPerExecutor.getOrElse(<span class="number">1</span>))</span><br><span class="line">        .sortBy(_.coresFree).reverse</span><br><span class="line">      <span class="keyword">val</span> assignedCores = scheduleExecutorsOnWorkers(app, usableWorkers, spreadOutApps)</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Now that we've decided how many cores to allocate on each worker, let's allocate them</span></span><br><span class="line">      <span class="keyword">for</span> (pos &lt;- <span class="number">0</span> until usableWorkers.length <span class="keyword">if</span> assignedCores(pos) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        allocateWorkerResourceToExecutors(</span><br><span class="line">          app, assignedCores(pos), coresPerExecutor, usableWorkers(pos))</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p><code>startExecutorsOnWorkers()</code>按照FIFO方式为每个app分配executor，<code>allocateWorkerResourceToExecutors</code>通过<code>launchExecutor(worker, exec)</code>启动executor。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">launchDriver</span></span>(worker: <span class="type">WorkerInfo</span>, driver: <span class="type">DriverInfo</span>) &#123;</span><br><span class="line">  logInfo(<span class="string">"Launching driver "</span> + driver.id + <span class="string">" on worker "</span> + worker.id)</span><br><span class="line">  worker.addDriver(driver)</span><br><span class="line">  driver.worker = <span class="type">Some</span>(worker)</span><br><span class="line">  worker.endpoint.send(<span class="type">LaunchDriver</span>(driver.id, driver.desc))</span><br><span class="line">  driver.state = <span class="type">DriverState</span>.<span class="type">RUNNING</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">launchExecutor</span></span>(worker: <span class="type">WorkerInfo</span>, exec: <span class="type">ExecutorDesc</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">  logInfo(<span class="string">"Launching executor "</span> + exec.fullId + <span class="string">" on worker "</span> + worker.id)</span><br><span class="line">  worker.addExecutor(exec)</span><br><span class="line">  worker.endpoint.send(<span class="type">LaunchExecutor</span>(masterUrl,</span><br><span class="line">    exec.application.id, exec.id, exec.application.desc, exec.cores, exec.memory))</span><br><span class="line">  exec.application.driver.send(</span><br><span class="line">    <span class="type">ExecutorAdded</span>(exec.id, worker.id, worker.hostPort, exec.cores, exec.memory))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>二者都是给相应的worker发送Launch消息，executor起来后，还需要给driver发送ExecutorAdded的消息，表示任务已经开始做了。</p>
-<p>每个<code>org.apache.spark.deploy.worker.Worker</code>启动后会通过<code>registerWithMaster()</code>方法向Master注册。收到Launch消息后，worker会启动相应的线程运行driver和executor。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">LaunchDriver</span>(driverId, driverDesc) =&gt; &#123;</span><br><span class="line">    logInfo(<span class="string">s"Asked to launch driver <span class="subst">$driverId</span>"</span>)</span><br><span class="line">    <span class="keyword">val</span> driver = <span class="keyword">new</span> <span class="type">DriverRunner</span>(</span><br><span class="line">      conf,</span><br><span class="line">      driverId,</span><br><span class="line">      workDir,</span><br><span class="line">      sparkHome,</span><br><span class="line">      driverDesc.copy(command = <span class="type">Worker</span>.maybeUpdateSSLSettings(driverDesc.command, conf)),</span><br><span class="line">      self,</span><br><span class="line">      workerUri,</span><br><span class="line">      securityMgr)</span><br><span class="line">    drivers(driverId) = driver</span><br><span class="line">    driver.start()</span><br><span class="line"></span><br><span class="line">    coresUsed += driverDesc.cores</span><br><span class="line">    memoryUsed += driverDesc.mem</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 收到LaunchExecutor之后，启动ExecutorRunner，并给Master发送消息</span></span><br><span class="line">  <span class="comment">// manager是ExecutorRunner，start之后会下载和运行executor</span></span><br><span class="line">  manager.start()</span><br><span class="line">  sendToMaster(<span class="type">ExecutorStateChanged</span>(appId, execId, manager.state, <span class="type">None</span>, <span class="type">None</span>))</span><br></pre></td></tr></table></figure>
-<p>Master收到ExecutorStateChanged消息之后，会给client发送ExecutorUpdated消息，如果任务结束，还会移除executor。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="type">ExecutorStateChanged</span>(appId, execId, state, message, exitStatus) =&gt; &#123;</span><br><span class="line">  <span class="keyword">val</span> execOption = idToApp.get(appId).flatMap(app =&gt; app.executors.get(execId))</span><br><span class="line">  execOption <span class="keyword">match</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">Some</span>(exec) =&gt; &#123;</span><br><span class="line">      <span class="keyword">val</span> appInfo = idToApp(appId)</span><br><span class="line">      <span class="keyword">val</span> oldState = exec.state</span><br><span class="line">      exec.state = state</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (state == <span class="type">ExecutorState</span>.<span class="type">RUNNING</span>) &#123;</span><br><span class="line">        assert(oldState == <span class="type">ExecutorState</span>.<span class="type">LAUNCHING</span>,</span><br><span class="line">          <span class="string">s"executor <span class="subst">$execId</span> state transfer from <span class="subst">$oldState</span> to RUNNING is illegal"</span>)</span><br><span class="line">        appInfo.resetRetryCount()</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 给driver发消息</span></span><br><span class="line">      exec.application.driver.send(<span class="type">ExecutorUpdated</span>(execId, state, message, exitStatus))</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (<span class="type">ExecutorState</span>.isFinished(state)) &#123;</span><br><span class="line">        <span class="comment">// Remove this executor from the worker and app</span></span><br><span class="line">        logInfo(<span class="string">s"Removing executor <span class="subst">$&#123;exec.fullId&#125;</span> because it is <span class="subst">$state</span>"</span>)</span><br><span class="line">        <span class="comment">// If an application has already finished, preserve its</span></span><br><span class="line">        <span class="comment">// state to display its information properly on the UI</span></span><br><span class="line">        <span class="keyword">if</span> (!appInfo.isFinished) &#123;</span><br><span class="line">          appInfo.removeExecutor(exec)</span><br><span class="line">        &#125;</span><br><span class="line">        exec.worker.removeExecutor(exec)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">val</span> normalExit = exitStatus == <span class="type">Some</span>(<span class="number">0</span>)</span><br><span class="line">        <span class="comment">// Only retry certain number of times so we don't go into an infinite loop.</span></span><br><span class="line">        <span class="keyword">if</span> (!normalExit) &#123;</span><br><span class="line">          <span class="keyword">if</span> (appInfo.incrementRetryCount() &lt; <span class="type">ApplicationState</span>.<span class="type">MAX_NUM_RETRY</span>) &#123;</span><br><span class="line">            schedule()</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">val</span> execs = appInfo.executors.values</span><br><span class="line">            <span class="keyword">if</span> (!execs.exists(_.state == <span class="type">ExecutorState</span>.<span class="type">RUNNING</span>)) &#123;</span><br><span class="line">              logError(<span class="string">s"Application <span class="subst">$&#123;appInfo.desc.name&#125;</span> with ID <span class="subst">$&#123;appInfo.id&#125;</span> failed "</span> +</span><br><span class="line">                <span class="string">s"<span class="subst">$&#123;appInfo.retryCount&#125;</span> times; removing it"</span>)</span><br><span class="line">              removeApplication(appInfo, <span class="type">ApplicationState</span>.<span class="type">FAILED</span>)</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">None</span> =&gt;</span><br><span class="line">      logWarning(<span class="string">s"Got status update for unknown executor <span class="subst">$appId</span>/<span class="subst">$execId</span>"</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="总结流程"><a href="#总结流程" class="headerlink" title="总结流程"></a>总结流程</h3><ol>
-<li>SparkSubmit启动Client，如果是local模式，则直接在本地运行driver，Client就是driver</li>
-<li>如果是cluster模式，Client发送RequestSubmitDriver给Master，根据参数确定部署的方式</li>
-<li>Master接收到请求之后就开始调度，先调度driver程序，然后再调度executor（等待driver先起来），调度完成后会给Client返回SubmitDriverResponse消息</li>
-<li>Master为driver分配worker，发送LaunchDriver消息给worker，启动driver（应用主类）</li>
-<li>driver会提交app，向Master发送RegisterApplication消息，有app之后才会调度executor</li>
-<li>Master根据app为executor分配worker，发送LaunchExecutor消息给worker，启动executor，worker会给Master返回ExecutorStateChanged消息</li>
-<li>Master收到ExecutorStateChanged消息会给driver发送ExecutorUpdated消息</li>
-</ol>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/05/HBase架构/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2017/04/05/HBase架构/" itemprop="url">
-                  HBase架构
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-05T10:29:50+08:00">
-                2017-04-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/大数据/" itemprop="url" rel="index">
-                    <span itemprop="name">大数据</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2017/04/05/HBase架构/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/05/HBase架构/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h3 id="概念和组件"><a href="#概念和组件" class="headerlink" title="概念和组件"></a>概念和组件</h3><ol>
-<li>Region<ul>
-<li>按行划分，负载均衡的最小单元，用户数据表由一个或多个Region组成</li>
-<li>在Region中每个ColumnFamily的数据组成一个Store</li>
-<li>每个Store由一个Memstore和多个HFile组成</li>
-</ul>
-</li>
-<li>Region Servers<ul>
-<li>维护HMaster分配给它的Region，处理对这些Region的IO请求；负责切分在运行过程中变得过大的Region</li>
-<li>组件：<ul>
-<li>BlockCache：读缓存，LRU缓存，每个Region Server一个</li>
-<li>WAL：日志，写数据先进日志，每个Region Server一个</li>
-<li>MemStore：写缓存，每个CF一个</li>
-<li>HFile：MemStore刷到disk</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>HMaster<ul>
-<li>协调：<ul>
-<li>为Region Server分配Regions</li>
-<li>负责Region Server的负载均衡</li>
-<li>发现失效的Region Server并重新分配其上的Regions</li>
-</ul>
-</li>
-<li>管理：处理schema更新请求，比如新建表等</li>
-</ul>
-</li>
-<li>ZooKeeper<ul>
-<li>保证只有一个HMaster</li>
-<li>对Region Servers和HMaster状态提供通知机制，HMaster需要借助zk来知道节点的状态</li>
-<li>存储Meta表的地址</li>
-</ul>
-</li>
-<li>Meta Table<ul>
-<li>Key: table, start key, region id</li>
-<li>Values: RegionServer</li>
-<li>Client第一次读写需要从zk获取Meta表地址，也就是负责该表的Region Server</li>
-</ul>
-</li>
-</ol>
-<h3 id="读写过程"><a href="#读写过程" class="headerlink" title="读写过程"></a>读写过程</h3><ol>
-<li>Read<ul>
-<li>通过zk获取Meta表，然后定位到相应的Region Server</li>
-<li>首先读BlockCache，然后读MemStore，如果都读不到，再读HFile，可能需要读取多个小的HFiles（读放大影响）</li>
-<li>Region Server负责的Regions一般都在本地，不过当Regions重新分配（负载均衡或失效）时，可能需要负责远程的Region，直到major compact将远程的Region合并到本地</li>
-</ul>
-</li>
-<li>Write<ul>
-<li>先写WAL，然后写MemStore，进入MemStore就表示写成功了（client收到成功消息）</li>
-<li>写是一个顺序增加的过程，所有更新和删除操作都是在后续的compact过程中进行的，更新是版本，删除通过标志位</li>
-</ul>
-</li>
-<li>Compact<ul>
-<li>minor compact<ul>
-<li>以Store为单位进行，自动将小的HFiles合并成大HFile</li>
-<li>不会处理已经Deleted或Expired的Cell</li>
-<li>触发条件：Memstore Flush、</li>
-</ul>
-</li>
-<li>major compact：将一个Region上的所有HFiles写成一个HFile，每个CF一个HFile；可配置为自动，会消耗大量IO和网络资源（写放大影响），并不需要经常运行</li>
-</ul>
-</li>
-<li>Split<ul>
-<li>Region达到一定大小的时候，超过设置的阈值，会自动split为两个大小相等的Regions</li>
-</ul>
-</li>
-</ol>
-<h3 id="失败恢复"><a href="#失败恢复" class="headerlink" title="失败恢复"></a>失败恢复</h3><ol>
-<li>HMaster失效会选出新的HMaster</li>
-<li>HMaster通过zk感知Region Server的上下线</li>
-<li>通过replay WAL重新恢复下线的Region Server</li>
-</ol>
-<h3 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h3><ol>
-<li>优势<ul>
-<li>强一致性：写成功对所有读都同时立即可见</li>
-<li>可拓展性：HDFS以及Region的自动化分，拓展Region Server非常方便</li>
-<li>高可靠性：容错和数据恢复</li>
-<li>生态环境：与Hadoop生态紧密结合</li>
-</ul>
-</li>
-<li>劣势<ul>
-<li>不够平滑，写放大和读放大</li>
-<li>数据恢复比较慢</li>
-</ul>
-</li>
-</ol>
-<h3 id="使用心得"><a href="#使用心得" class="headerlink" title="使用心得"></a>使用心得</h3><h4 id="HBase存储格式"><a href="#HBase存储格式" class="headerlink" title="HBase存储格式"></a>HBase存储格式</h4><ul>
-<li>定长的部分：Key Length + Value Length + Row Length + CF Length + Timestamp + Key Value = ( 4 + 4 + 2 + 1 + 8 + 1) = <font color="red">20 Bytes</font></li>
-<li>变长的部分：Row + Column Family + Column Qualifier + Value</li>
-<li>可以优化的部分：Row + Column Family + Column Qualifier</li>
-</ul>
-<p><img src="http://o7b0ga5fo.bkt.clouddn.com/images/bigdata/hbase_key_value_format.jpg" width="750" height="200" alt="HBase Key Value存储" style="clear: both; display: block; margin:auto; "></p>
-<h4 id="Row-Key的设计"><a href="#Row-Key的设计" class="headerlink" title="Row Key的设计"></a>Row Key的设计</h4><ul>
-<li>长度原则：越短越好，会影响HFile的存储效率，缓存的利用率</li>
-<li>散列原则：避免出现Region Server热点</li>
-<li>唯一原则：使用hash的话，需要考虑可能的冲突问题</li>
-</ul>
-<h4 id="命令行操作"><a href="#命令行操作" class="headerlink" title="命令行操作"></a>命令行操作</h4><ul>
-<li>deleteall命令无法删除带有将来时间戳的Cell</li>
-</ul>
-<p>参考资料：</p>
-<ul>
-<li><a href="https://www.mapr.com/blog/in-depth-look-hbase-architecture" target="_blank" rel="external">https://www.mapr.com/blog/in-depth-look-hbase-architecture</a> </li>
-<li><a href="http://prafull-blog.blogspot.jp/2012/06/how-to-calculate-record-size-of-hbase.html" target="_blank" rel="external">http://prafull-blog.blogspot.jp/2012/06/how-to-calculate-record-size-of-hbase.html</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/15/Java最佳实践/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2017/03/15/Java最佳实践/" itemprop="url">
-                  Java最佳实践
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-15T20:31:17+08:00">
-                2017-03-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/技术/" itemprop="url" rel="index">
-                    <span itemprop="name">技术</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2017/03/15/Java最佳实践/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/03/15/Java最佳实践/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>最近又看了下<a href="https://item.jd.com/10058902.html" target="_blank" rel="external">《Effective Java》</a>，书里面分享了作者长期使用Java的一些习惯和高效用法，非常好的一本书，可以看成是Java语言的Best Practices，结合自己的一些经验，我总结了一下平常工作中经常会使用到的内容，并不是很全，后续会慢慢补充更多内容。</p>
-<h3 id="基本规范"><a href="#基本规范" class="headerlink" title="基本规范"></a>基本规范</h3><ol>
-<li>避免未经定义的常量值/字面量出现在代码中，定义为有意义的常量</li>
-<li>尽量使用枚举来替代常量</li>
-<li>避免使用字符串来替代数值类型、枚举类型以及聚集类型</li>
-<li>使用StringBuilder来加速多次的字符串连接操作</li>
-<li>最小化局部变量的作用域</li>
-<li>避免创建不必要的对象，尽量复用重复对象</li>
-</ol>
-<h3 id="分支控制"><a href="#分支控制" class="headerlink" title="分支控制"></a>分支控制</h3><ol>
-<li>避免多行if-else分支</li>
-<li>switch语句必须有default分支</li>
-<li>switch尽量配合枚举类型使用</li>
-<li>避免在if条件判断中使用复杂的逻辑语句，可先定义有意义的变量，然后再使用</li>
-<li>逻辑语句须注意计算优先级，不确定的情况下建议使用括号，提高可读性</li>
-</ol>
-<h3 id="类和接口"><a href="#类和接口" class="headerlink" title="类和接口"></a>类和接口</h3><ol>
-<li>类成员与方法访问控制从严</li>
-<li>所有的覆写方法，必须加@Override注解</li>
-<li>优先使用静态成员类，尽量使用静态成员类替代非静态成员类和局部类</li>
-<li>工具类或单例类应禁止从外部构建对象实例</li>
-<li>通过接口引用对象，而不是直接使用对象</li>
-</ol>
-<h3 id="Object方法"><a href="#Object方法" class="headerlink" title="Object方法"></a>Object方法</h3><ol>
-<li>杜绝使用finalize方法，可以使用try-catch替代</li>
-<li>避免使用clone方法，可以使用拷贝构造器替代</li>
-<li>使用常量或确定有值的对象来调用equals方法，避免空指针异常</li>
-<li>只要重写equals方法，就必须重写hashCode方法</li>
-<li>自定义对象用于Set或Map的键，必须重写hashCode方法和equals方法</li>
-<li>自定义对象的hashCode推荐算法<ul>
-<li>初始化int变量result为非零常数，比如17</li>
-<li>对于对象中的每个关键域，计算散列码c</li>
-<li>迭代更新<code>result = 31 * result + c</code></li>
-<li>返回result</li>
-</ul>
-</li>
-</ol>
-<h3 id="Collection集合"><a href="#Collection集合" class="headerlink" title="Collection集合"></a>Collection集合</h3><ol>
-<li>集合初始化时，尽量指定集合初始值大小</li>
-<li>优先使用foreach遍历集合</li>
-<li>使用entrySet而不是keySet方式遍历Map类集合KV</li>
-<li>返回零长度的数组或者集合</li>
-<li>使用集合转数组的方法，必须使用集合的<code>toArray(T[] array)</code>，传入的是类型完全一样的数组，大小就是<code>list.size()</code></li>
-<li>集合泛型方法尽量使用PECS(Producer Extends Consumer Super)原则</li>
-</ol>
-<h3 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h3><ol>
-<li>创建线程或线程池时，必须指定有意义的线程名称</li>
-<li>线程资源必须通过线程池提供，尽量避免在应用中自行显式创建线程</li>
-<li>避免使用wait和notify方法，优先使用上层并发工具和并发库</li>
-<li>使用双重检查锁模式需要慎重</li>
-<li>并发场景下须注意使用的第三方库是否线程安全</li>
-</ol>
-<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ol>
-<li>单例模式推荐使用惰性初始化模式</li>
-</ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Foo</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">HelperHolder</span> </span>&#123;</span><br><span class="line">       <span class="keyword">public</span> <span class="keyword">static</span> Helper helper = <span class="keyword">new</span> Helper();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Helper <span class="title">getHelper</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> HelperHolder.helper;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>参考文献：</p>
-<ul>
-<li><a href="https://item.jd.com/10058902.html" target="_blank" rel="external">《Effective Java》</a> </li>
-<li><a href="http://www.infoq.com/cn/minibooks/Alibaba-Java-minibook" target="_blank" rel="external">《阿里巴巴 Java 开发手册》</a></li>
-</ul>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -2245,7 +2286,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">22</span>
+                <span class="site-state-item-count">26</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -2267,7 +2308,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">16</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -2326,7 +2367,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
