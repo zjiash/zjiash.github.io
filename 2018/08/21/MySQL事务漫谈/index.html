@@ -90,25 +90,22 @@
 
 
 
-<meta name="description" content="###事务的基本属性
-关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)
-关于A所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
-在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出">
+<meta name="description" content="事务的基本属性关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(来自知乎左轻侯，个人表示赞同)
+所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
+关于A在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL事务漫谈">
 <meta property="og:url" content="http://yoursite.com/2018/08/21/MySQL事务漫谈/index.html">
 <meta property="og:site_name" content="zjiash的博客">
-<meta property="og:description" content="###事务的基本属性
-关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)
-关于A所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
-在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出">
-<meta property="og:updated_time" content="2019-08-21T09:58:00.000Z">
+<meta property="og:description" content="事务的基本属性关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(来自知乎左轻侯，个人表示赞同)
+所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
+关于A在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。">
+<meta property="og:updated_time" content="2019-09-17T08:47:36.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL事务漫谈">
-<meta name="twitter:description" content="###事务的基本属性
-关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)
-关于A所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
-在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出">
+<meta name="twitter:description" content="事务的基本属性关于C在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(来自知乎左轻侯，个人表示赞同)
+所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。
+关于A在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。">
 
 
 
@@ -389,10 +386,9 @@
       
 
       
-        <p>###事务的基本属性</p>
-<h4 id="关于C"><a href="#关于C" class="headerlink" title="关于C"></a>关于C</h4><p>在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)</p>
-<h4 id="关于A"><a href="#关于A" class="headerlink" title="关于A"></a>关于A</h4><p>所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。</p>
-<p>在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。后者由数据库的原子性来保证，即在同一个事务内部的一组操作必须全部执行成功或者全部失败。</p>
+        <h3 id="事务的基本属性"><a href="#事务的基本属性" class="headerlink" title="事务的基本属性"></a>事务的基本属性</h3><h4 id="关于C"><a href="#关于C" class="headerlink" title="关于C"></a>关于C</h4><p>在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(来自知乎左轻侯，个人表示赞同)</p>
+<p>所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。</p>
+<h4 id="关于A"><a href="#关于A" class="headerlink" title="关于A"></a>关于A</h4><p>在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。后者由数据库的原子性来保证，即在同一个事务内部的一组操作必须全部执行成功或者全部失败。</p>
 <p>原子性的实现依赖回滚日志（Undo）。</p>
 <h4 id="关于I"><a href="#关于I" class="headerlink" title="关于I"></a>关于I</h4><p>但是原子性并不能完全保证一致性，比如在多个事务并发进行的情况下，事务A的结果可能被事务B覆盖。因此需要引入隔离性，即多个事务并发执行后的状态，和它们串行执行后的状态是等价的。</p>
 <p>隔离性的实现依赖锁：悲观锁（加锁）和乐观锁（MVCC）。</p>
@@ -412,7 +408,7 @@
 <li>如果A~F直接崩溃，数据还未持久化到磁盘，无影响。undo log如果只刷一半，也是没有影响的。</li>
 </ol>
 <p>存在的问题：undo log可以顺序刷磁盘，性能还行。数据刷磁盘需要随机，性能就很低了。如果缓存数据，可以保证原子性，但是没办法保证持久性，提交之后的日志还会回滚，undo log只能恢复到旧值，没办法恢复到新值。持久性保证需要引入Redo日志。</p>
-<h3 id="Redo日志"><a href="#Redo日志" class="headerlink" title="Redo日志"></a>Redo日志</h3><p>Redo日志和Undo日志相反，记录旧数据，在事务提交前，只要将Redo日志持久化，不需要将数据持久化。系统奔溃之后也能根据持久化的Redo日志来恢复。</p>
+<h3 id="Redo日志"><a href="#Redo日志" class="headerlink" title="Redo日志"></a>Redo日志</h3><p>Redo日志和Undo日志相反，记录新数据，在事务提交前，只要将Redo日志持久化，不需要将数据持久化。系统奔溃之后也能根据持久化的Redo日志来恢复。</p>
 <p>流程如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">A.事务开始.</span><br><span class="line">B.记录A=1到undo log.</span><br><span class="line">C.修改A=3.</span><br><span class="line">D.记录A=3到redo log.</span><br><span class="line">E.记录B=2到undo log.</span><br><span class="line">F.修改B=4.</span><br><span class="line">G.记录B=4到redo log.</span><br><span class="line">H.将redo log写入磁盘。</span><br><span class="line">I.事务提交</span><br></pre></td></tr></table></figure>
 <p>核心思想：</p>
@@ -421,7 +417,7 @@
 <li>数据不需要在事务提交前写入磁盘，而是缓存在内存中，且必须晚于Redo日志持久化。</li>
 <li>Redo日志保证持久性，Undo日志保证原子性。</li>
 <li>Redo日志采取内存批量buffer和顺序追加的方式来改善性能。</li>
-<li>并发事务共享Redo日志，按执顺序依次记录，节省空间，进一步提升性能。但是会导致未提交的事务日志写入磁盘。</li>
+<li>并发事务共享Redo日志，按执行顺序依次记录，节省空间，进一步提升性能。但是会导致未提交的事务日志写入磁盘。</li>
 </ol>
 <p>恢复：</p>
 <ol>
@@ -491,8 +487,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/03/19/MySQL隔离级别及实现/" rel="next" title="MySQL隔离级别及实现">
-                <i class="fa fa-chevron-left"></i> MySQL隔离级别及实现
+              <a href="/2017/12/29/Kafka学习/" rel="next" title="Kafka学习">
+                <i class="fa fa-chevron-left"></i> Kafka学习
               </a>
             
           </div>
@@ -653,7 +649,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#关于C"><span class="nav-number">1.</span> <span class="nav-text">关于C</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于A"><span class="nav-number">2.</span> <span class="nav-text">关于A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于I"><span class="nav-number">3.</span> <span class="nav-text">关于I</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于D"><span class="nav-number">4.</span> <span class="nav-text">关于D</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Undo日志"><span class="nav-number"></span> <span class="nav-text">Undo日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redo日志"><span class="nav-number"></span> <span class="nav-text">Redo日志</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#小结-1"><span class="nav-number">1.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他问题"><span class="nav-number"></span> <span class="nav-text">其他问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考文献"><span class="nav-number"></span> <span class="nav-text">参考文献</span></a></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#事务的基本属性"><span class="nav-number">1.</span> <span class="nav-text">事务的基本属性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#关于C"><span class="nav-number">1.1.</span> <span class="nav-text">关于C</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于A"><span class="nav-number">1.2.</span> <span class="nav-text">关于A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于I"><span class="nav-number">1.3.</span> <span class="nav-text">关于I</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关于D"><span class="nav-number">1.4.</span> <span class="nav-text">关于D</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#小结"><span class="nav-number">1.5.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Undo日志"><span class="nav-number">2.</span> <span class="nav-text">Undo日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redo日志"><span class="nav-number">3.</span> <span class="nav-text">Redo日志</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#小结-1"><span class="nav-number">3.1.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他问题"><span class="nav-number">4.</span> <span class="nav-text">其他问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考文献"><span class="nav-number">5.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
             
 
           </div>

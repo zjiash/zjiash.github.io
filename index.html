@@ -273,6 +273,135 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/17/Jetty初探/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="zjiash">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zjiash的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2019/09/17/Jetty初探/" itemprop="url">
+                  Jetty初探
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-09-17T17:04:38+08:00">
+                2019-09-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/09/17/Jetty初探/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2019/09/17/Jetty初探/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/21/MySQL事务隔离性/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -448,8 +577,8 @@
 </ul>
 <p>RC级别下存在的问题</p>
 <ul>
-<li>可以解决当前读不可重复读的问题，比如update同一行，可以避免</li>
-<li>插入和update同一索引id的事务可以同时进行</li>
+<li>可以解决当前读不可重复读的问题，比如update同一行，可以避免被覆盖（事务提交才释放锁）</li>
+<li>插入和update同一索引id的事务可以同时进行，出现幻读</li>
 </ul>
 <h3 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h3><p>解决可重复读的问题，同时MySQL在这个级别还解决了幻读问题。</p>
 <h4 id="读-快照读-1"><a href="#读-快照读-1" class="headerlink" title="读/快照读"></a>读/快照读</h4><p>不可重复读和幻读的区别：在于如何通过锁机制来解决他们产生的问题。</p>
@@ -630,10 +759,9 @@
       
         
           
-            <p>###事务的基本属性</p>
-<h4 id="关于C"><a href="#关于C" class="headerlink" title="关于C"></a>关于C</h4><p>在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(个人理解，来自知乎左轻侯)</p>
-<h4 id="关于A"><a href="#关于A" class="headerlink" title="关于A"></a>关于A</h4><p>所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。</p>
-<p>在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。后者由数据库的原子性来保证，即在同一个事务内部的一组操作必须全部执行成功或者全部失败。</p>
+            <h3 id="事务的基本属性"><a href="#事务的基本属性" class="headerlink" title="事务的基本属性"></a>事务的基本属性</h3><h4 id="关于C"><a href="#关于C" class="headerlink" title="关于C"></a>关于C</h4><p>在事务处理的ACID属性中，一致性是最基本的属性，其它的三个属性都为了保证一致性而存在的。(来自知乎左轻侯，个人表示赞同)</p>
+<p>所谓一致性，指的是数据处于一种有意义的状态，这种状态是语义上的而不是语法上的。</p>
+<h4 id="关于A"><a href="#关于A" class="headerlink" title="关于A"></a>关于A</h4><p>在实际应用场景中，一致性可以分为数据库外部的一致性和数据库内部的一致性。前者由外部应用的编码来保证，比如不允许A账号减少100元，但B账号只增加50元的转账应用逻辑出现。后者由数据库的原子性来保证，即在同一个事务内部的一组操作必须全部执行成功或者全部失败。</p>
 <p>原子性的实现依赖回滚日志（Undo）。</p>
 <h4 id="关于I"><a href="#关于I" class="headerlink" title="关于I"></a>关于I</h4><p>但是原子性并不能完全保证一致性，比如在多个事务并发进行的情况下，事务A的结果可能被事务B覆盖。因此需要引入隔离性，即多个事务并发执行后的状态，和它们串行执行后的状态是等价的。</p>
 <p>隔离性的实现依赖锁：悲观锁（加锁）和乐观锁（MVCC）。</p>
@@ -653,7 +781,7 @@
 <li>如果A~F直接崩溃，数据还未持久化到磁盘，无影响。undo log如果只刷一半，也是没有影响的。</li>
 </ol>
 <p>存在的问题：undo log可以顺序刷磁盘，性能还行。数据刷磁盘需要随机，性能就很低了。如果缓存数据，可以保证原子性，但是没办法保证持久性，提交之后的日志还会回滚，undo log只能恢复到旧值，没办法恢复到新值。持久性保证需要引入Redo日志。</p>
-<h3 id="Redo日志"><a href="#Redo日志" class="headerlink" title="Redo日志"></a>Redo日志</h3><p>Redo日志和Undo日志相反，记录旧数据，在事务提交前，只要将Redo日志持久化，不需要将数据持久化。系统奔溃之后也能根据持久化的Redo日志来恢复。</p>
+<h3 id="Redo日志"><a href="#Redo日志" class="headerlink" title="Redo日志"></a>Redo日志</h3><p>Redo日志和Undo日志相反，记录新数据，在事务提交前，只要将Redo日志持久化，不需要将数据持久化。系统奔溃之后也能根据持久化的Redo日志来恢复。</p>
 <p>流程如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">A.事务开始.</span><br><span class="line">B.记录A=1到undo log.</span><br><span class="line">C.修改A=3.</span><br><span class="line">D.记录A=3到redo log.</span><br><span class="line">E.记录B=2到undo log.</span><br><span class="line">F.修改B=4.</span><br><span class="line">G.记录B=4到redo log.</span><br><span class="line">H.将redo log写入磁盘。</span><br><span class="line">I.事务提交</span><br></pre></td></tr></table></figure>
 <p>核心思想：</p>
@@ -662,7 +790,7 @@
 <li>数据不需要在事务提交前写入磁盘，而是缓存在内存中，且必须晚于Redo日志持久化。</li>
 <li>Redo日志保证持久性，Undo日志保证原子性。</li>
 <li>Redo日志采取内存批量buffer和顺序追加的方式来改善性能。</li>
-<li>并发事务共享Redo日志，按执顺序依次记录，节省空间，进一步提升性能。但是会导致未提交的事务日志写入磁盘。</li>
+<li>并发事务共享Redo日志，按执行顺序依次记录，节省空间，进一步提升性能。但是会导致未提交的事务日志写入磁盘。</li>
 </ol>
 <p>恢复：</p>
 <ol>
@@ -688,186 +816,6 @@
 <li><a href="https://draveness.me/mysql-transaction#" target="_blank" rel="external">https://draveness.me/mysql-transaction#</a></li>
 <li><a href="https://www.qiancheng.me/post/coding/mysql-001" target="_blank" rel="external">https://www.qiancheng.me/post/coding/mysql-001</a></li>
 </ol>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/19/MySQL隔离级别及实现/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="zjiash">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="zjiash的博客">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2018/03/19/MySQL隔离级别及实现/" itemprop="url">
-                  MySQL隔离级别及实现
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-19T14:30:17+08:00">
-                2018-03-19
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/技术/" itemprop="url" rel="index">
-                    <span itemprop="name">技术</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/03/19/MySQL隔离级别及实现/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2018/03/19/MySQL隔离级别及实现/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>最近在看<a href="https://book.douban.com/subject/23008813/" target="_blank" rel="external">《高性能MySQL》</a>一书，关于书中MySQL解决幻读的问题有一些疑问：在1.3.1小节介绍可重复读时描述：InnoDB通过多版本并发控制MVCC解决了幻读问题，并在1.4多版本并发控制小节中进一步说明了是如何解决的。然后，后文1.5.1中又说InnoDB通过间隙锁（next-key locking）策略防止幻读的出现。第一次读的时候感觉比较奇怪，通过多版本完全可以解决幻读的问题，读事务只会看到自己之前的数据，其他事务是无法影响它的，为什么还需要间隙锁来防止幻读出现？在多番Google之后，终于明白了其中的玄机。</p>
-<h3 id="数据库隔离级别"><a href="#数据库隔离级别" class="headerlink" title="数据库隔离级别"></a>数据库隔离级别</h3><p>隔离级别用来限制事务之间的交互程度，用于解决ACID中的隔离性问题，目前业界一般有如下4种隔离级别：</p>
-<ol>
-<li>READ_UNCOMMITTED：未提交读，在该级别下，事务中的修改，即使没有提交，对其他事务也是可见的。该级别会产生所谓的脏读，导致很多问题；</li>
-<li>READ_COMMITTED：提交读，在该级别下，事务开始后，只能看见已提交的事务所做的修改，如果其他事务在该事务进行过程中提交，则该事务可以看见提交后的修改。该级别也叫不可重复读，因为前后两次同样的查询，可能会得到不一样的结果；</li>
-<li>REPEATABLE_READ：可重复读，该级别保证在同一个事务中，多次读取同样记录的结果是一致的。注意：这里的可重复读重点在于update和delete，而不在于insert。该级别无法解决“幻读”问题：范围查询可能会读到其他事务insert的幻行，这一点通过普通的行锁难以解决；</li>
-<li>SERIALIZABLE：可串行化，该级别通过强制事务串行化执行来保证隔离性，是最高的隔离级别；</li>
-</ol>
-<p>隔离级别依次增强，但是导致的问题是并发能力的减弱。MySQL的InnoDB引擎支持所有的隔离级别，默认的隔离级别是可重复读。需要注意：MySql的RR级别是解决了幻读的。</p>
-<h3 id="InnoDB引擎的解决方案"><a href="#InnoDB引擎的解决方案" class="headerlink" title="InnoDB引擎的解决方案"></a>InnoDB引擎的解决方案</h3><p>通过MVCC解决“快照读”的幻读问题，通过间隙锁解决“当前读”的幻读问题。具体思路如下：</p>
-<ol>
-<li>脏读的解决方案：可以通过读写互斥锁来解决，正在写的数据不允许读，等待释放。但是这样性能太低，对于MySql，如果读取的行正在执行update或delete操作，这时读操作不会等待行上锁的释放，而是读取行的一个快照数据；</li>
-<li>不可重复读的解决方案：RR下，事务在第一个Read操作时（而非事务开始时），会建立ReadView；RC下，事务在每次Read操作时，都会重新建立Read View。Read View可以解决其他事务的update和delete影响；</li>
-<li>幻读的解决方案：Read View也可以解决其他事务的insert对“快照读”的影响，但是无法解决“当前读”的问题。例子：比如常见的先读后写业务，事务T1先检查没有id=1的记录然后再插入id=1的记录，如果在期间T2已经插入了id=1的记录，且已经提交，则此时T1会出现“幻读”。这个光通过MVCC和行锁是无法解决的，MySql引人间隙键的方式；</li>
-</ol>
-<p>总结一下：</p>
-<ol>
-<li>对于MySql，不可重复读侧重表达读-读，幻读则是说读-写，用写来证实读的是鬼影；</li>
-<li>在RR下，MVCC可以这样理解：MV(Multi Version)用于解决脏读和不可重复读，而CC(Concurrency Control)则是利用Next-Key Lock解决幻读问题;</li>
-<li>RR为InnoDB的默认事务隔离级别，RR已经完全保证事务的隔离性要求，即达到SERIALIZABLE隔离级别；</li>
-</ol>
-<h3 id="多版本并发控制MVCC"><a href="#多版本并发控制MVCC" class="headerlink" title="多版本并发控制MVCC"></a>多版本并发控制MVCC</h3><p>MVCC原理：每行记录保存两个隐藏的列，一个记录该行的创建时间，一个记录该行的过期或删除时间。存储的并非实际的时间，而是系统或事务的版本号，该版本号随事务自动递增。MVCC只在读提交和可重复读这两个隔离级别下工作，与另外两个隔离级别不兼容。在可重复读隔离级别下，具体的操作如下：</p>
-<ol>
-<li>读操作：只查找创建版本小于等于当前事务版本 &amp;&amp; 删除版本大于当前事务版本或者为空的行</li>
-<li>插入操作：新增创建版本为当前事务版本的行</li>
-<li>删除操作：标记删除行的过期或删除版本</li>
-<li>更新操作：插入新行并删除旧行</li>
-</ol>
-<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p><a href="https://tech.meituan.com/2014/08/20/innodb-lock.html" target="_blank" rel="external">https://tech.meituan.com/2014/08/20/innodb-lock.html</a><br><a href="https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/" target="_blank" rel="external">https://liuzhengyang.github.io/2017/04/18/innodb-mvcc/</a></p>
 
           
         
