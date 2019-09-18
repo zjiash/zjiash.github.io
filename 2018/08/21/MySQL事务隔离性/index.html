@@ -100,7 +100,7 @@ READ_COMMITTED：提交读，在该级别下，事务开始后，只能看见已
 <meta property="og:description" content="事务的四种隔离级别
 READ_UNCOMMITTED：未提交读，在该级别下，事务中的修改，即使没有提交，对其他事务也是可见的。该级别会产生所谓的脏读，导致很多问题；
 READ_COMMITTED：提交读，在该级别下，事务开始后，只能看见已提交的事务所做的修改，如果其他事务在该事务进行过程中提交，则该事务可以看见提交后的修改。该级别也叫不可重复读，因为前后两次同样的查询，可能会得到不一样的结果；Or">
-<meta property="og:updated_time" content="2019-09-17T09:03:13.000Z">
+<meta property="og:updated_time" content="2019-09-17T09:50:34.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL事务隔离性">
 <meta name="twitter:description" content="事务的四种隔离级别
@@ -454,7 +454,7 @@ READ_COMMITTED：提交读，在该级别下，事务开始后，只能看见已
 <p>RC级别下存在的问题</p>
 <ul>
 <li>可以解决当前读不可重复读的问题，比如update同一行，可以避免被覆盖（事务提交才释放锁）</li>
-<li>插入和update同一索引id的事务可以同时进行，出现幻读</li>
+<li>插入和update同一索引id的事务可以同时进行，出现幻读（非唯一索引的插入并不加锁，在RR级别下也是，也就是说RR级别可以同时插入相同索引的记录）</li>
 </ul>
 <h3 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h3><p>解决可重复读的问题，同时MySQL在这个级别还解决了幻读问题。</p>
 <h4 id="读-快照读-1"><a href="#读-快照读-1" class="headerlink" title="读/快照读"></a>读/快照读</h4><p>不可重复读和幻读的区别：在于如何通过锁机制来解决他们产生的问题。</p>

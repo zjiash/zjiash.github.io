@@ -359,7 +359,21 @@
       
         
           
-            
+            <h3 id="Servlet"><a href="#Servlet" class="headerlink" title="Servlet"></a>Servlet</h3><p>早期的Web技术主要用于静态页面，随着时间的发展，交互操作的需求越来越多，出现了CGI（Common Gateway Interface，公共网关接口）。</p>
+<p>传统的CGI程序在一定程度上解决了用户需求。不过也存在一些不足之处，如CGI程序编写困难、响应时间较长、以进程方式运行导致性能受限等。</p>
+<p>Java Servlet（Java服务器小程序）是一个基于Java技术的Web组件，运行在服务器端，它由Servlet容器所管理，用于生成动态的内容，可以认为是Java阵营的CGI解决方案。</p>
+<p>Servlet本质上只是一个接口，它并不处理任何的协议和连接等动作，只是约定了一种处理request-response的模式。</p>
+<p>JSP（Java Server Pages）是一种动态网页开发技术，它使用JSP标签在HTML网页中插入Java代码，最终也会被编译成Servlet。</p>
+<h3 id="Servlet-Container"><a href="#Servlet-Container" class="headerlink" title="Servlet Container"></a>Servlet Container</h3><p>Servlet无法独立运行，必须被部署到Servlet容器中，由容器来实例化和调用。在JSP技术推出后，管理和运行Servlet/JSP的容器也称为Web容器。</p>
+<p>Servlet的生命周期是由发布它的容器控制的，比如Jetty，当要把请求映射到一个Servlet上时，容器一般会做如下的事情:</p>
+<ul>
+<li>如果Servlet不存在，就加载Servlet类，创建Servlet实例，然后调用Servlet的init方法   </li>
+<li>执行Servlet的service方法，传递request和response对象   </li>
+<li>如果容器要移除掉servlet，它就会调用Servlet的destroy方法   </li>
+</ul>
+<h3 id="Jetty"><a href="#Jetty" class="headerlink" title="Jetty"></a>Jetty</h3><p>架构：Jetty Server是一个Connector集合和一个Handler集合间的管道，Connector用于接收HTTP连接，Handler服务来自连接的请求并作出响应，Jetty Server使用来自一个线程池的线程来处理这些工作。</p>
+<p>Connector和Handler都是可以高度定制化的，默认的Connector采用的异步NIO的框架。具体的代码细节可以参考：<a href="http://www.iocoder.cn/categories/Jetty/" target="_blank" rel="external">Jetty源码</a>和<a href="https://juejin.im/post/5bcb5e515188252a784d0c1f" target="_blank" rel="external">Jetty解析</a></p>
+
           
         
       
@@ -578,7 +592,7 @@
 <p>RC级别下存在的问题</p>
 <ul>
 <li>可以解决当前读不可重复读的问题，比如update同一行，可以避免被覆盖（事务提交才释放锁）</li>
-<li>插入和update同一索引id的事务可以同时进行，出现幻读</li>
+<li>插入和update同一索引id的事务可以同时进行，出现幻读（非唯一索引的插入并不加锁，在RR级别下也是，也就是说RR级别可以同时插入相同索引的记录）</li>
 </ul>
 <h3 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h3><p>解决可重复读的问题，同时MySQL在这个级别还解决了幻读问题。</p>
 <h4 id="读-快照读-1"><a href="#读-快照读-1" class="headerlink" title="读/快照读"></a>读/快照读</h4><p>不可重复读和幻读的区别：在于如何通过锁机制来解决他们产生的问题。</p>
